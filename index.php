@@ -64,6 +64,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <title>Login</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
+       /* ===== Paleta clara (consistente con crear.php) ===== */
+    :root{
+      --bg:#f6f8fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --bd:#cbd5e1;
+      --bd-strong:#94a3b8;
+
+      --primary:#2563eb;
+      --primary-700:#1d4ed8;
+      --danger:#dc2626;
+      --success:#16a34a;
+      --warning:#f59e0b;
+
+      --chip:#f1f5f9;
+      --chipbd:#e2e8f0;
+
+      --shadow: 0 10px 24px rgba(15,23,42,.08);
+      
+      --bg-image: url('/Checador_Scap/assets/img/logo_login_scap.jpg');
+      --bg-size: clamp(520px, 52vw, 720px);
+    }
+    
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+    body::before{
+        content:"";
+        position:fixed;
+        inset:0;
+        z-index:-1;
+        background-image: var(--bg-image);
+        background-repeat: no-repeat;          
+        background-position: center center;    
+        background-size: var(--bg-size) auto;  
+        background-attachment: fixed;
+
+        opacity:.10;                            /* ajusta intensidad */
+        filter:saturate(.95) brightness(1.02) contrast(1.03);
+        pointer-events:none;
+    }
+
     body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;margin:24px;color:#111}
     .nombre-pagina{margin:0 0 6px;font-size:32px;line-height:1.2}
     .descripcion-pagina{margin:0 0 18px;color:#555}
