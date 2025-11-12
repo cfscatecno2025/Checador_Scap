@@ -1,0 +1,25 @@
+# NetBeans
+nbproject/private/
+build/
+dist/
+
+# Node / herramientas
+node_modules/
+npm-debug.log*
+pnpm-lock.yaml
+yarn.lock
+
+# PHP
+vendor/
+composer.lock
+
+# Entornos / credenciales
+.env
+.env.*.local
+
+# SO / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+

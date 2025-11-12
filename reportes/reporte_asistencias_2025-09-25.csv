@@ -1,0 +1,2 @@
+fecha,id_empleado,codigo_empleado,nombre,apellido,hora_entrada,hora_salida,retardo_minutos,estado
+2025-09-25,8,4560,Helita,Roles,17:33:23.52928,17:33:30.62878,0,sin_horario
