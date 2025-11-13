@@ -235,6 +235,7 @@ $NAVBAR = $ROOT . '/components/navbar.php';
             <input class="input" id="f_rol" name="rol" list="rolesList" maxlength="50" required>
             <datalist id="rolesList">
               <option value="Administrador"></option>
+              <option value="Empleado">Empleado</option>
               <!--AGREGAR MAS OPCIONES SI SE REQUIERE-->
             </datalist>
           </div>

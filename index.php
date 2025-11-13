@@ -1,5 +1,5 @@
 <?php
-// ====== FORMULARIO DE INICIO DE SESION ======
+// ====== FORMULARIO DE INICIO DE SESIÓN ======
 // Autor: Ailyn Cruz
 // Archivo: index.php
 
@@ -26,28 +26,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         LIMIT 1
       ');
       $stmt->execute([':u' => $usuario]);
-      $row = $stmt->fetch();
+      $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
       if (!$row || !password_verify($password, $row['contrasena'])) {
         $error = 'Usuario o contraseña incorrectos.';
       } else {
-        // ✅ Sesión
+        // ===== Sesión =====
         $_SESSION['uid']      = (int)$row['id_usuario'];
         $_SESSION['empleado'] = (int)$row['id_empleado'];
         $_SESSION['usuario']  = $row['clave_acceso'];
-        $_SESSION['rol']      = $row['rol'];
 
-        // ✅ Redirección por rol
-        $rol = strtolower(trim($_SESSION['rol'] ?? ''));
+        // ===== Normalización de roles que vienen de la BD Agregar mas si se requiere =====
+        $rolBD   = $row['rol'] ?? '';
+        $rolNorm = strtolower(trim($rolBD));
+        $map = [
+          'administrador' => 'admin',
+          'admin'         => 'admin',
+          'empleado'      => 'empleado',
+          'usuario'       => 'usuario',
+        ];
+        $_SESSION['rol'] = $map[$rolNorm] ?? $rolNorm;
 
-        // mapa rol → ruta
+        // ===== Redirección de vista por rol =====
         $destinos = [
           'admin'    => '/Checador_Scap/vistas-roles/vista-admin.php',
           'usuario'  => '/Checador_Scap/vistas-roles/vista-usuario.php',
           'empleado' => '/Checador_Scap/vistas-roles/vista-empleado.php',
         ];
 
-        $destino = $destinos[$rol] ?? '/Checador_Scap/no-autorizado.php';
+        $destino = $destinos[$_SESSION['rol']] ?? '/Checador_Scap/no-autorizado.php';
         header('Location: ' . $destino);
         exit;
       }
@@ -64,70 +71,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <title>Login</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-       /* ===== Paleta clara (consistente con crear.php) ===== */
+    /* ===== Paleta clara (consistente con crear.php) ===== */
     :root{
       --bg:#f6f8fb;
       --card:#ffffff;
       --text:#0f172a;
       --muted:#64748b;
       --bd:#cbd5e1;
-      --bd-strong:#94a3b8;
-
       --primary:#2563eb;
       --primary-700:#1d4ed8;
-      --danger:#dc2626;
-      --success:#16a34a;
-      --warning:#f59e0b;
-
-      --chip:#f1f5f9;
-      --chipbd:#e2e8f0;
 
       --shadow: 0 10px 24px rgba(15,23,42,.08);
-      
+
       --bg-image: url('/Checador_Scap/assets/img/logo_login_scap.jpg');
       --bg-size: clamp(520px, 52vw, 720px);
     }
-    
+
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0;
-      font-family:system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
       background:var(--bg);
       color:var(--text);
+      padding:24px;
     }
+    /* Fondo con logo tenue */
     body::before{
-        content:"";
-        position:fixed;
-        inset:0;
-        z-index:-1;
-        background-image: var(--bg-image);
-        background-repeat: no-repeat;          
-        background-position: center center;    
-        background-size: var(--bg-size) auto;  
-        background-attachment: fixed;
-
-        opacity:.10;                            /* ajusta intensidad */
-        filter:saturate(.95) brightness(1.02) contrast(1.03);
-        pointer-events:none;
+      content:"";
+      position:fixed;
+      inset:0;
+      z-index:-1;
+      background-image: var(--bg-image);
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-size: var(--bg-size) auto;
+      background-attachment: fixed;
+      opacity:.10;
+      filter:saturate(.95) brightness(1.02) contrast(1.03);
+      pointer-events:none;
     }
 
-    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;margin:24px;color:#111}
     .nombre-pagina{margin:0 0 6px;font-size:32px;line-height:1.2}
-    .descripcion-pagina{margin:0 0 18px;color:#555}
+    .descripcion-pagina{margin:0 0 18px;color:#475569}
     .formulario{max-width:520px}
     .campo{margin-bottom:12px}
     label{display:block;font-weight:600;margin-bottom:6px}
-    input[type=text],input[type=password]{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;background:#fff}
-    .boton{padding:12px 16px;border:none;border-radius:8px;background:#331ED4;color:#fff;font-weight:700;cursor:pointer}
-    .boton:hover{opacity:.95}
-    .acciones a{display:inline-block;margin-right:12px;margin-top:8px;color:#331ED4;text-decoration:none}
+    input[type=text],input[type=password]{
+      width:100%;padding:10px;border:2px solid var(--bd);border-radius:10px;background:#fff;
+      transition:border-color .18s, box-shadow .18s;
+    }
+    input[type=text]:focus, input[type=password]:focus{
+      border-color:var(--primary);
+      box-shadow:0 0 0 3px rgba(37,99,235,.16);
+      outline:none;
+    }
+    .boton{
+      padding:12px 16px;border:none;border-radius:10px;background:var(--primary);color:#fff;
+      font-weight:700;cursor:pointer;box-shadow:var(--shadow)
+    }
+    .boton:hover{background:var(--primary-700)}
+    .acciones a{display:inline-block;margin-right:12px;margin-top:8px;color:var(--primary);text-decoration:none}
     .acciones a:hover{text-decoration:underline}
-    .alert{padding:10px 12px;border-radius:8px;margin:12px 0}
-    .alert-error{background:#ffe6e6;border:1px solid #f5bcbc;color:#a50000}
-    .row-inline{display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .muted{color:#666;font-size:14px}
-    .check{display:flex;align-items:center;gap:8px;user-select:none}
+    .alert{padding:10px 12px;border-radius:10px;margin:12px 0;background:#fee2e2;border:2px solid #fecaca;color:#991b1b}
+    .row-inline{display:flex;align-items:center;gap:8px}
+    .check{display:flex;align-items:center;gap:8px;user-select:none;color:#475569}
     .check input{width:16px;height:16px}
   </style>
 </head>
@@ -137,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <p class="descripcion-pagina">Inicia sesión con tus datos</p>
 
 <?php if (!empty($error)): ?>
-  <div class="alert alert-error"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
+  <div class="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
 <?php endif; ?>
 
 <form class="formulario" method="POST" action="">
@@ -165,12 +173,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       minlength="6"
       required
     />
-    <div class="row-inline" style="margin-top:8px">
-      <label class="check muted" for="showPwd">
-        <input type="checkbox" id="showPwd" />
-        Mostrar contraseña
-      </label>
-    </div>
+    <label class="check" for="showPwd">
+      <input type="checkbox" id="showPwd" />
+      Mostrar contraseña
+    </label>
   </div>
 
   <input type="submit" class="boton" value="Iniciar Sesión">
