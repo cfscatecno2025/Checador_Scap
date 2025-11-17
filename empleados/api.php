@@ -1,19 +1,7 @@
 <?php
 /**
- * API JSON para empleados (listado/búsqueda/paginación + CRUD + horario)
- * Rutas:
- *  GET  ?action=list&q=&page=1&limit=5
- *  GET  ?action=get&id=1001              // 'id' aquí es id_empleado (código interno)
- *  POST ?action=create   {csrf, codigo_empleado, nombre, apellido,
- *                         horario:[{dia_semana,activo,entrada,salida,tolerancia_min|tolerancia_minutos}]}
- *  POST ?action=update   {csrf, id_empleado, codigo_empleado, nombre, apellido, horario:[...] }
- *  POST ?action=delete   {csrf, id}      // 'id' = id_empleado
- *
- * Nota de modelo de datos (según lo que indicaste):
- * - La tabla empleados tiene un 'id' (PK autoincrement) que no usamos aquí.
- * - Usamos 'id_empleado' (numérico, NO PK) como identificador lógico; queremos que
- *   siempre sea igual a 'codigo_empleado' (1001, 9001, etc).
- * - La tabla horarios referencia a empleados.id_empleado (FK).
+ * /Checador_Scap/empleados/api.php
+ * API JSON Empleados (list/get/create/update/delete)
  */
 session_start();
 header('Content-Type: application/json; charset=utf-8');
@@ -27,7 +15,6 @@ require_once $ROOT . '/conection/conexion.php';
 function ok($d = []) { echo json_encode(['ok' => true] + $d); exit; }
 function bad($m = 'Error') { echo json_encode(['ok' => false, 'msg' => $m]); exit; }
 
-/** Normaliza horas a HH:MM:SS; si viene vacío o mal, regresa null */
 function norm_time($t) {
   $t = trim((string)$t);
   if ($t === '') return null;
@@ -36,7 +23,6 @@ function norm_time($t) {
   return null;
 }
 
-/** CSRF: solo obligamos header X-CSRF en métodos NO-GET */
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 if ($method !== 'GET') {
   if (($_SERVER['HTTP_X_CSRF'] ?? '') !== ($_SESSION['csrf'] ?? '')) {
@@ -84,23 +70,17 @@ if ($action === 'list') {
 
 /* ========================= GET ========================= */
 elseif ($action === 'get') {
-  $id = (int)($_GET['id'] ?? 0); // aquí 'id' es id_empleado (1001, etc.)
+  $id = (int)($_GET['id'] ?? 0); // id_empleado
   if (!$id) bad('ID inválido');
 
-  $st = $pdo->prepare("SELECT * FROM empleados WHERE id_empleado = ?");
+  // Incluye 'firma' para poder verificar/editar desde el modal (admin)
+  $st = $pdo->prepare("SELECT id_empleado, codigo_empleado, nombre, apellido, cargo, turno, firma FROM empleados WHERE id_empleado = ?");
   $st->execute([$id]);
   $emp = $st->fetch(PDO::FETCH_ASSOC);
   if (!$emp) bad('No encontrado');
 
-  // Alias para compatibilidad: tolerancia_min
   $s = $pdo->prepare("
-    SELECT
-      id_horario,
-      dia_semana,
-      entrada,
-      salida,
-      tolerancia_minutos AS tolerancia_min,
-      activo
+    SELECT id_horario, dia_semana, entrada, salida, tolerancia_minutos AS tolerancia_min, activo
     FROM horarios
     WHERE id_empleado = ?
     ORDER BY dia_semana
@@ -113,7 +93,6 @@ elseif ($action === 'get') {
 
 /* ===================== CREATE/UPDATE ==================== */
 elseif ($action === 'create' || $action === 'update') {
-
   $data = json_decode(file_get_contents('php://input'), true);
   if (!is_array($data)) bad('JSON inválido');
   if (($data['csrf'] ?? '') !== ($_SESSION['csrf'] ?? '')) bad('CSRF inválido');
@@ -121,43 +100,40 @@ elseif ($action === 'create' || $action === 'update') {
   $codigo   = trim($data['codigo_empleado'] ?? '');
   $nombre   = trim($data['nombre'] ?? '');
   $apellido = trim($data['apellido'] ?? '');
-  $turno = trim($data['turno'] ?? '');
-  $cargo = trim($data['cargo'] ?? '');
+  $turno    = trim($data['turno'] ?? '');
+  $cargo    = trim($data['cargo'] ?? '');
   $horario  = $data['horario'] ?? [];
+  $firma    = trim($data['firma'] ?? '');   // Base64 del template
 
   if ($codigo === '' || mb_strlen($codigo) > 20) bad('Código obligatorio (máx 20)');
   if (!preg_match('/^\d+$/', $codigo)) bad('El código debe ser numérico');
   if ($nombre === '' || mb_strlen($nombre) > 50) bad('Nombre obligatorio');
   if ($apellido === '' || mb_strlen($apellido) > 50) bad('Apellido obligatorio');
-  if ($cargo === '' || mb_strlen($cargo) > 50) bad('Cargo o puesto obligatorio');
+  if ($cargo === '' || mb_strlen($cargo) > 50) bad('Cargo obligatorio');
   if ($turno === '' || mb_strlen($turno) > 50) bad('Turno obligatorio');
+  if ($firma === '') { $firma = null; }
 
-  // Regla: id_empleado debe ser igual a codigo_empleado (numérico)
   $idEmp = (int)$codigo;
 
   try {
     $pdo->beginTransaction();
 
     if ($action === 'create') {
-      // Evitar duplicados por id_empleado o codigo_empleado
       $q = $pdo->prepare("SELECT 1 FROM empleados WHERE id_empleado = ? OR codigo_empleado = ? LIMIT 1");
       $q->execute([$idEmp, $codigo]);
       if ($q->fetchColumn()) { $pdo->rollBack(); bad('El código ya existe'); }
 
-      // Insert explícito (NO tocamos el 'id' autoincrement PK)
       $ins = $pdo->prepare("
-        INSERT INTO empleados (id_empleado, codigo_empleado, nombre, apellido, cargo, turno)
-        VALUES (?,?,?,?,?,?)
+        INSERT INTO empleados (id_empleado, codigo_empleado, nombre, apellido, cargo, turno, firma)
+        VALUES (?,?,?,?,?,?,?)
       ");
-      $ins->execute([$idEmp, $codigo, $nombre, $apellido, $cargo, $turno]);
+      $ins->execute([$idEmp, $codigo, $nombre, $apellido, $cargo, $turno, $firma]);
+      $id = $idEmp;
 
-      $id = $idEmp; // para usar en horarios
-
-    } else { // UPDATE
-      $idBefore = (int)($data['id_empleado'] ?? 0); // id_empleado actual (antes de cambiar)
+    } else {
+      $idBefore = (int)($data['id_empleado'] ?? 0);
       if (!$idBefore) { $pdo->rollBack(); bad('ID requerido'); }
 
-      // ¿Está libre el nuevo id_empleado/codigo (excepto el propio)?
       $q = $pdo->prepare("
         SELECT 1
           FROM empleados
@@ -168,21 +144,19 @@ elseif ($action === 'create' || $action === 'update') {
       $q->execute([$idEmp, $codigo, $idBefore]);
       if ($q->fetchColumn()) { $pdo->rollBack(); bad('El código ya existe'); }
 
-      // 1) Borramos horarios amarrados al id_empleado previo (si existían)
       $pdo->prepare("DELETE FROM horarios WHERE id_empleado = ?")->execute([$idBefore]);
 
-      // 2) Actualizamos el registro, moviendo también el id_empleado para que coincida con el código
       $up = $pdo->prepare("
         UPDATE empleados
-           SET id_empleado = ?, codigo_empleado = ?, nombre = ?, apellido = ?, cargo = ?, turno = ?
+           SET id_empleado = ?, codigo_empleado = ?, nombre = ?, apellido = ?, cargo = ?, turno = ?,
+               firma = COALESCE(?, firma)
          WHERE id_empleado = ?
       ");
-      $up->execute([$idEmp, $codigo, $nombre, $apellido, $cargo, $turno, $idBefore]);
+      $up->execute([$idEmp, $codigo, $nombre, $apellido, $cargo, $turno, $firma, $idBefore]);
 
-      $id = $idEmp; // nuevo id_empleado que se usará al reinsertar horarios
+      $id = $idEmp;
     }
 
-    // Inserta horario: SOLO días activos y con horas válidas
     if (is_array($horario)) {
       $hins = $pdo->prepare("
         INSERT INTO horarios (id_empleado, dia_semana, entrada, salida, tolerancia_minutos, activo)
@@ -191,9 +165,8 @@ elseif ($action === 'create' || $action === 'update') {
       foreach ($horario as $h) {
         $dia = (int)($h['dia_semana'] ?? 0);
         if ($dia < 1 || $dia > 7) continue;
-
-        $activo = !empty($h['activo']);          // true/false
-        if (!$activo) continue;                   // no insertamos días inactivos
+        $activo = !empty($h['activo']);
+        if (!$activo) continue;
 
         $ent = norm_time($h['entrada'] ?? '');
         $sal = norm_time($h['salida']  ?? '');
@@ -201,16 +174,15 @@ elseif ($action === 'create' || $action === 'update') {
           $pdo->rollBack();
           bad("Faltan horas válidas para el día {$dia} (formato HH:MM).");
         }
-
         $tol = (int)($h['tolerancia_minutos'] ?? $h['tolerancia_min'] ?? 10);
-        $hins->execute([$id, $dia, $ent, $sal, $tol, 1]);
+        $hins->execute([$id, $dia, $ent, $sal, $tol, true]);
       }
     }
 
     $pdo->commit();
     ok();
 
-  } catch (Throwable $e) {
+  } catch (\Throwable $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
     bad($e->getMessage());
   }
@@ -222,7 +194,7 @@ elseif ($action === 'delete') {
   if (!is_array($data)) bad('JSON inválido');
   if (($data['csrf'] ?? '') !== ($_SESSION['csrf'] ?? '')) bad('CSRF inválido');
 
-  $id = (int)($data['id'] ?? 0); // id_empleado
+  $id = (int)($data['id'] ?? 0);
   if (!$id) bad('ID inválido');
 
   try {
@@ -231,13 +203,10 @@ elseif ($action === 'delete') {
     $pdo->prepare("DELETE FROM empleados WHERE id_empleado = ?")->execute([$id]);
     $pdo->commit();
     ok();
-  } catch (Throwable $e) {
+  } catch (\Throwable $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
     bad($e->getMessage());
   }
 }
 
-/* ===================== ACCIÓN INVÁLIDA ================== */
-else {
-  bad('Acción no soportada');
-}
+else { bad('Acción no soportada'); }
