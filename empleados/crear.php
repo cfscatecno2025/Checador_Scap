@@ -93,7 +93,7 @@ $DEFAULT_AVATAR = dirname($_SERVER['SCRIPT_NAME'], 2) . '/assets/profiles-img/pe
   <div class="sheet position-relative" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="sheet-h">
       <strong id="modalTitle">Nuevo empleado</strong>
-      <button class="btn btn-sm btn-outline-secondary" id="btnClose">Cerrar</button>
+      <button class="btn btn-sm btn-outline-secondary" id="btnClose">X</button>
     </div>
     <div class="sheet-c">
       <form id="frmEmp" autocomplete="off">
@@ -170,8 +170,8 @@ $DEFAULT_AVATAR = dirname($_SERVER['SCRIPT_NAME'], 2) . '/assets/profiles-img/pe
 <div class="sheet-back" id="fpBack" aria-hidden="true">
   <div class="sheet position-relative" style="width:min(740px,95vw)">
     <div class="x" id="fpClose" aria-label="Cerrar">×</div>
-    <div class="h3 fw-bold">HUELLA</div>
-    <div class="h5 text-muted mb-2">Escanea tu huella</div>
+    <div class="h3 fw-bold text-center">REGISTRAR HUELLA</div>
+    <div class="h5 text-muted mb-2 text-center">Por favor, escanea tu huella</div>
 
     <svg class="fp-ico" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M7.5 8.5C8 7 9.7 6 12 6c3 0 4.5 2 4.5 4.5 0 1.8-.6 3.6-1.4 5.1" stroke="#2563eb" stroke-width="1.6" stroke-linecap="round"/>
@@ -179,7 +179,7 @@ $DEFAULT_AVATAR = dirname($_SERVER['SCRIPT_NAME'], 2) . '/assets/profiles-img/pe
       <path d="M5.5 14c.7-3.5 3.2-6 6.5-6 3.9 0 6.5 3 6.5 7.5 0 2.3-.7 4.3-1.8 6" stroke="#2563eb" stroke-width="1.6" stroke-linecap="round"/>
     </svg>
 
-    <div id="fpModalMsg" class="fp-modal-msg text-muted">Listo para capturar</div>
+    <div id="fpModalMsg" class="fp-modal-msg text-muted text-center">Listo para capturar</div>
 
     <div class="d-flex gap-2 justify-content-center mt-3 mb-2">
       <button type="button" class="btn btn-primary" id="btnModalEnroll">Capturar</button>
@@ -520,7 +520,7 @@ document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeFpModal();
 document.getElementById('btnModalEnroll').addEventListener('click', async ()=>{
   try{
     await fpOpen();
-    setFpModalMsg('Escanea una vez…','info');
+    setFpModalMsg('coloca tu huella en el lector 3 veces…','info');
     let template = null;
     for(let intento=1; intento<=3; intento++){
       const r = await fpFetch("api/enroll", { method:"POST" });
