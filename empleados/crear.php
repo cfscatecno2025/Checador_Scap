@@ -1,7 +1,7 @@
 <?php
 /**
  * /Checador_Scap/empleados/crear.php
- * Gestión de empleados + botón "Agregar huella" que abre modal tipo kiosko.
+ * Gestión de empleados + botón “Agregar huella” (modal kiosko) + upload de foto.
  */
 session_start();
 $ROOT = dirname(__DIR__);
@@ -15,6 +15,7 @@ if (empty($_SESSION['csrf'])) {
 }
 $csrf = $_SESSION['csrf'];
 $NAVBAR = $ROOT . '/components/navbar.php';
+$DEFAULT_AVATAR = dirname($_SERVER['SCRIPT_NAME'], 2) . '/assets/profiles-img/perfil_default.jpg';
 ?>
 <!doctype html>
 <html lang="es">
@@ -24,7 +25,7 @@ $NAVBAR = $ROOT . '/components/navbar.php';
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body{background:#f6f8fb} .container{max-width:1100px} .input{border-radius:10px}
+    body{background:#f6f8fb} .container{max-width:1100px}
     .sheet-back{position:fixed;inset:0;display:none;z-index:1065;background:rgba(0,0,0,.45)}
     .sheet{width:min(920px,96vw);max-height:calc(100dvh - 40px);margin:auto;background:#fff;border-radius:14px;display:flex;flex-direction:column}
     .sheet-h{padding:14px 16px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between}
@@ -34,6 +35,10 @@ $NAVBAR = $ROOT . '/components/navbar.php';
     .pill{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid #e5e7eb}
     .day-row{display:grid;grid-template-columns:110px 1fr 1fr 140px 90px;gap:8px;align-items:center;margin-bottom:8px}
     .hr{height:1px;background:#e5e7eb;margin:14px 0}
+
+    /* Foto */
+    .avatar-preview{width:56px;height:56px;border-radius:999px;object-fit:cover;border:3px solid #e5e7eb;background:#f8fafc}
+    .tbl-avatar{width:40px;height:40px;border-radius:999px;object-fit:cover;border:2px solid #e5e7eb;background:#f8fafc}
 
     /* Modal de huella tipo kiosko */
     .fp-ico{width:180px;height:180px;margin:10px auto 6px;display:block}
@@ -116,12 +121,19 @@ $NAVBAR = $ROOT . '/components/navbar.php';
             <label for="f_turno" class="form-label">Turno</label>
             <input class="form-control" id="f_turno" name="turno" maxlength="50" required>
           </div>
+
+          <!-- FOTO: botón para abrir explorador + preview + hidden path -->
           <div class="col-md-4">
-            <label for="f_foto" class="form-label">Foto perfil</label>
-            <input class="form-control" id="f_foto" name="foto" maxlength="100" required>
+            <label class="form-label d-block">Foto perfil</label>
+            <div class="d-flex align-items-center gap-3">
+              <img id="fotoPreview" class="avatar-preview" src="<?= htmlspecialchars($DEFAULT_AVATAR) ?>" alt="Foto">
+              <button type="button" class="btn btn-outline-primary" id="btnUploadFoto">Cargar foto de perfil</button>
+            </div>
+            <input type="file" id="fileFoto" accept="image/*" hidden>
+            <input type="hidden" name="foto" id="f_foto_path" value="<?= htmlspecialchars($DEFAULT_AVATAR) ?>">
           </div>
 
-          <!-- Adscrito + botón para abrir modal de huella -->
+          <!-- Adscrito + botón de huella -->
           <div class="col-md-8">
             <label for="f_unidad_medica" class="form-label">Adscrito</label>
             <input class="form-control" id="f_unidad_medica" name="unidad_medica" maxlength="50" required>
@@ -158,8 +170,8 @@ $NAVBAR = $ROOT . '/components/navbar.php';
 <div class="sheet-back" id="fpBack" aria-hidden="true">
   <div class="sheet position-relative" style="width:min(740px,95vw)">
     <div class="x" id="fpClose" aria-label="Cerrar">×</div>
-    <div class="h3 fw-bold text-center">AGREGAR HUELLA</div>
-    <div class="h5 text-muted text-center mb-2">Por favor escanea tu huella</div>
+    <div class="h3 fw-bold">HUELLA</div>
+    <div class="h5 text-muted mb-2">Escanea tu huella</div>
 
     <svg class="fp-ico" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M7.5 8.5C8 7 9.7 6 12 6c3 0 4.5 2 4.5 4.5 0 1.8-.6 3.6-1.4 5.1" stroke="#2563eb" stroke-width="1.6" stroke-linecap="round"/>
@@ -167,7 +179,7 @@ $NAVBAR = $ROOT . '/components/navbar.php';
       <path d="M5.5 14c.7-3.5 3.2-6 6.5-6 3.9 0 6.5 3 6.5 7.5 0 2.3-.7 4.3-1.8 6" stroke="#2563eb" stroke-width="1.6" stroke-linecap="round"/>
     </svg>
 
-    <div id="fpModalMsg" class="fp-modal-msg text-muted text-center">Listo para capturar</div>
+    <div id="fpModalMsg" class="fp-modal-msg text-muted">Listo para capturar</div>
 
     <div class="d-flex gap-2 justify-content-center mt-3 mb-2">
       <button type="button" class="btn btn-primary" id="btnModalEnroll">Capturar</button>
@@ -177,11 +189,11 @@ $NAVBAR = $ROOT . '/components/navbar.php';
   </div>
 </div>
 
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 const API  = '<?= rtrim(dirname($_SERVER["REQUEST_URI"]), "/") ?>/api.php';
 const CSRF = '<?= $csrf ?>';
+const DEFAULT_AVATAR = '<?= $DEFAULT_AVATAR ?>';
 
 const $tbody = document.getElementById('tbody');
 const $pager = document.getElementById('pager');
@@ -250,17 +262,18 @@ function renderDays(schedule){
 }
 function gatherForm(){
   const fd = new FormData($frm);
+  const foto = (fd.get('foto') || '').toString().trim() || DEFAULT_AVATAR;
   const payload = {
     csrf: CSRF,
     id_empleado: ($frm.querySelector('#f_id').value || null),
-    codigo_empleado: fd.get('codigo_empleado').trim(),
-    nombre: fd.get('nombre').trim(),
-    apellido: fd.get('apellido').trim(),
-    turno: fd.get('turno').trim(),
-    cargo: fd.get('cargo').trim(),
+    codigo_empleado: (fd.get('codigo_empleado')||'').toString().trim(),
+    nombre: (fd.get('nombre')||'').toString().trim(),
+    apellido: (fd.get('apellido')||'').toString().trim(),
+    turno: (fd.get('turno')||'').toString().trim(),
+    cargo: (fd.get('cargo')||'').toString().trim(),
     horario: [],
-    foto: fd.get('foto').trim(),
-    unidad_medica: fd.get('unidad_medica').trim(),
+    foto,
+    unidad_medica: (fd.get('unidad_medica')||'').toString().trim(),
     firma: (document.getElementById('f_firma').value || null)
   };
   DAYS.forEach(d=>{
@@ -288,12 +301,13 @@ function openModal(mode, data){
   $frm.reset(); renderDays([]);
   $btnDelete.hidden = true; $btnEditToggle.hidden = true;
 
-  // Estado inicial de huella en label
   const setFpStatus = (txt)=> document.getElementById('fpStatus').textContent = txt;
+  const setFoto = (url)=>{ document.getElementById('f_foto_path').value = url || DEFAULT_AVATAR; document.getElementById('fotoPreview').src = url || DEFAULT_AVATAR; };
 
   if (mode === 'create'){
     $title.textContent = 'Nuevo empleado';
     $frm.f_codigo.readOnly = false;
+    setFoto(DEFAULT_AVATAR);
     document.getElementById('f_firma').value = "";
     setFpStatus('Sin huella capturada.');
     setReadOnly(false);
@@ -306,7 +320,7 @@ function openModal(mode, data){
     $frm.f_apellido.value = data.apellido || '';
     $frm.f_cargo.value = data.cargo || '';
     $frm.f_turno.value = data.turno || '';
-    $frm.f_foto.value = data.foto || '';
+    setFoto(data.foto || DEFAULT_AVATAR);
     $frm.f_unidad_medica.value = data.unidad_medica || '';
     $frm.f_codigo.readOnly = true;
     renderDays(data.horario||[]);
@@ -323,7 +337,7 @@ function openModal(mode, data){
     $frm.f_apellido.value = data.apellido || '';
     $frm.f_cargo.value = data.cargo || '';
     $frm.f_turno.value = data.turno || '';
-    $frm.f_foto.value = data.foto || '';
+    setFoto(data.foto || DEFAULT_AVATAR);
     $frm.f_unidad_medica.value = data.unidad_medica || '';
     renderDays(data.horario||[]);
     document.getElementById('f_firma').value = (data.firma||"");
@@ -360,7 +374,7 @@ async function load(page=1){
           <td>${r.apellido||''}</td>
           <td>${r.cargo||''}</td>
           <td>${r.turno||''}</td>
-          <td>${r.foto||''}</td>
+          <td><img src="${r.foto || DEFAULT_AVATAR}" class="tbl-avatar" onerror="this.src='${DEFAULT_AVATAR}'" alt=""></td>
           <td>${r.unidad_medica||''}</td>
           <td>
             <div class="row-actions">
@@ -506,15 +520,12 @@ document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeFpModal();
 document.getElementById('btnModalEnroll').addEventListener('click', async ()=>{
   try{
     await fpOpen();
-    setFpModalMsg('coloca el dedo en el lector 3 veces…','info');
+    setFpModalMsg('Escanea una vez…','info');
     let template = null;
-
     for(let intento=1; intento<=3; intento++){
       const r = await fpFetch("api/enroll", { method:"POST" });
       const j = await r.json();
-
       if (j.ok && j.template){ template = j.template; break; }
-
       if (j.ok && typeof j.samples_remaining === 'number' && j.samples_remaining > 0){
         if (intento === 1) setFpModalMsg('Escanea otra vez…','info');
         else setFpModalMsg('Escanea una última vez…','info');
@@ -522,9 +533,7 @@ document.getElementById('btnModalEnroll').addEventListener('click', async ()=>{
       }
       if (!j.ok){ setFpModalMsg(j.error || 'No se pudo capturar. Intenta de nuevo.','error'); return; }
     }
-
     if (!template){ setFpModalMsg('No se obtuvo la plantilla. Intenta nuevamente.','error'); return; }
-
     document.getElementById('f_firma').value = template;
     setFpModalMsg('Huella registrada con éxito','ok');
     showToastSuccess('Huella capturada');
@@ -547,25 +556,19 @@ document.getElementById('btnModalVerify').addEventListener('click', async ()=>{
     });
     const j = await r.json();
     if (!j.ok){ setFpModalMsg(j.error || 'Error en verificación','error'); return; }
-    if (j.match){
-      setFpModalMsg(`Coincidencia${j.score ? ' (score '+j.score+')' : ''}`,'ok');
-      showToastSuccess('Coincide');
-    }else{
-      setFpModalMsg('No coincide, intenta de nuevo','error');
-      showToastError('No coincide');
-    }
+    if (j.match){ setFpModalMsg(`Coincidencia${j.score ? ' (score '+j.score+')' : ''}`,'ok'); showToastSuccess('Coincide'); }
+    else{ setFpModalMsg('No coincide, intenta de nuevo','error'); showToastError('No coincide'); }
   }catch(e){
     setFpModalMsg('No se pudo verificar','error');
     showToastError(e.message || 'No se pudo verificar');
   }
 });
 
-/* Borrar (limpia BD si hay ID y el campo local) */
+/* Borrar huella */
 document.getElementById('btnModalClear').addEventListener('click', async ()=>{
   const id = +($frm.querySelector('#f_id').value || 0);
   document.getElementById('f_firma').value = "";
   updateSmallStatus();
-
   if (id){
     try{
       const r = await fetch(API+'?action=clear_firma', {
@@ -577,17 +580,37 @@ document.getElementById('btnModalClear').addEventListener('click', async ()=>{
       if(!j.ok){ setFpModalMsg(j.msg || 'No se pudo borrar en BD','error'); return; }
       setFpModalMsg('Huella eliminada en BD. Puedes capturar una nueva.','ok');
       showToastSuccess('Huella eliminada en BD');
-    }catch(_){
-      setFpModalMsg('Error de red al borrar en BD','error');
-    }
+    }catch(_){ setFpModalMsg('Error de red al borrar en BD','error'); }
   }else{
     setFpModalMsg('Huella borrada (recuerda Guardar).','info');
     showToast('Huella borrada en el formulario.', 'info', 'Aviso');
   }
 });
 
+/* ====== Upload de foto ====== */
+const $btnUploadFoto = document.getElementById('btnUploadFoto');
+const $fileFoto = document.getElementById('fileFoto');
+const $fotoPreview = document.getElementById('fotoPreview');
+$btnUploadFoto.addEventListener('click', ()=> $fileFoto.click());
+$fileFoto.addEventListener('change', async ()=>{
+  const file = $fileFoto.files[0];
+  if(!file) return;
+  if(file.size > 5*1024*1024){ showToastError('La imagen debe ser ≤ 5 MB'); $fileFoto.value=''; return; }
+  const fd = new FormData();
+  fd.append('foto', file);
+  // Cabecera CSRF va en header (la API la exige)
+  try{
+    const r = await fetch(API+'?action=upload_foto', { method:'POST', headers:{'X-CSRF':CSRF}, body: fd });
+    const j = await r.json();
+    if(!j.ok){ showToastError(j.msg||'No se pudo subir la foto'); return; }
+    document.getElementById('f_foto_path').value = j.url;
+    $fotoPreview.src = j.url;
+    showToastSuccess('Foto cargada');
+  }catch(_){ showToastError('Error de red al subir la foto'); }
+});
+
 /* Init */
-function renderPager(){ /* igual que arriba */ const p=state.page,P=state.pages;const btn=(i,label=i,current=false)=>`<button class="btn btn-sm ${current?'btn-primary':'btn-outline-secondary'}" data-page="${i}">${label}</button>`;const parts=[];if(P<=1){$pager.innerHTML='';return;}const push=i=>parts.push(btn(i,i,i===p));push(1);if(p>3)parts.push('<span class="mx-1">…</span>');for(let i=Math.max(2,p-1);i<=Math.min(P-1,p+1);i++)push(i);if(p<P-2)parts.push('<span class="mx-1">…</span>');if(P>1)push(P);$pager.innerHTML=parts.join('');}
+function renderPager(){ const p=state.page,P=state.pages;const btn=(i,label=i,current=false)=>`<button class="btn btn-sm ${current?'btn-primary':'btn-outline-secondary'}" data-page="${i}">${label}</button>`;const parts=[];if(P<=1){$pager.innerHTML='';return;}const push=i=>parts.push(btn(i,i,i===p));push(1);if(p>3)parts.push('<span class="mx-1">…</span>');for(let i=Math.max(2,p-1);i<=Math.min(P-1,p+1);i++)push(i);if(p<P-2)parts.push('<span class="mx-1">…</span>');if(P>1)push(P);$pager.innerHTML=parts.join('');}
 renderDays([]); load(1);
 </script>
 </body>

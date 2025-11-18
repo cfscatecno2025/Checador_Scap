@@ -1,10 +1,7 @@
 <?php
-/**
- * /Checador_Scap/empleados/api.php
- * API JSON Empleados (list/get/create/update/delete/clear_firma)
- */
+// Checador_Scap/usuarios/api.php// Checador_Scap/usuarios/api.php
+declare(strict_types=1);
 session_start();
-header('Content-Type: application/json; charset=utf-8');
 
 $ROOT = dirname(__DIR__);
 require_once $ROOT . '/auth/require_login.php';
@@ -12,219 +9,175 @@ require_once $ROOT . '/auth/require_role.php';
 require_role(['admin']);
 require_once $ROOT . '/conection/conexion.php';
 
-function ok($d = []) { echo json_encode(['ok' => true] + $d); exit; }
-function bad($m = 'Error') { echo json_encode(['ok' => false, 'msg' => $m]); exit; }
+header('Content-Type: application/json; charset=utf-8');
 
-function norm_time($t) {
-  $t = trim((string)$t);
-  if ($t === '') return null;
-  if (preg_match('/^\d{2}:\d{2}$/', $t)) return $t . ':00';
-  if (preg_match('/^\d{2}:\d{2}:\d{2}$/', $t)) return $t;
-  return null;
+function json_out($arr, int $code = 200){
+  http_response_code($code);
+  echo json_encode($arr, JSON_UNESCAPED_UNICODE);
+  exit;
 }
 
-$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-if ($method !== 'GET') {
-  if (($_SERVER['HTTP_X_CSRF'] ?? '') !== ($_SESSION['csrf'] ?? '')) {
-    bad('CSRF inválido');
+function same_csrf(): bool {
+  $h = $_SERVER['HTTP_X_CSRF'] ?? '';
+  $b = null;
+  // Si viene JSON, léelo sólo para CSRF (las rutas POST lo volverán a leer)
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $raw = file_get_contents('php://input');
+    if ($raw !== false && $raw !== '') {
+      $tmp = json_decode($raw, true);
+      if (is_array($tmp)) $b = $tmp['csrf'] ?? null;
+    }
   }
+  return isset($_SESSION['csrf']) && ($_SESSION['csrf'] === $h || $_SESSION['csrf'] === $b);
 }
 
-$pdo = DB::conn();
-$action = $_GET['action'] ?? $_POST['action'] ?? '';
-
-/* ========================= LIST ========================= */
-if ($action === 'list') {
-  $q     = trim($_GET['q'] ?? '');
-  $page  = max(1, (int)($_GET['page'] ?? 1));
-  $limit = max(1, min(50, (int)($_GET['limit'] ?? 5)));
-  $offset = ($page - 1) * $limit;
-
-  $params = [];
-  $where = '';
-  if ($q !== '') {
-    $where = "WHERE (CAST(id_empleado AS TEXT) ILIKE :q OR codigo_empleado ILIKE :q OR nombre ILIKE :q OR apellido ILIKE :q OR turno ILIKE :q OR cargo ILIKE :q OR foto ILIKE :q OR unidad_medica ILIKE :q)";
-    $params[':q'] = "%{$q}%";
-  }
-
-  $st = $pdo->prepare("SELECT COUNT(*) FROM empleados $where");
-  $st->execute($params);
-  $total = (int)$st->fetchColumn();
-  $pages = max(1, (int)ceil($total / $limit));
-
-  $st = $pdo->prepare("
-    SELECT id_empleado, codigo_empleado, nombre, apellido, cargo, turno, foto, unidad_medica
-    FROM empleados
-    $where
-    ORDER BY id_empleado DESC
-    LIMIT :limit OFFSET :offset
-  ");
-  foreach ($params as $k => $v) $st->bindValue($k, $v);
-  $st->bindValue(':limit', $limit, PDO::PARAM_INT);
-  $st->bindValue(':offset', $offset, PDO::PARAM_INT);
-  $st->execute();
-  $rows = $st->fetchAll(PDO::FETCH_ASSOC);
-
-  ok(['rows' => $rows, 'total' => $total, 'page' => $page, 'pages' => $pages]);
+if (!same_csrf() && ($_GET['action'] ?? '') !== 'list' && ($_GET['action'] ?? '') !== 'get') {
+  json_out(['ok'=>false,'msg'=>'CSRF inválido'], 403);
 }
 
-/* ========================= GET ========================= */
-elseif ($action === 'get') {
-  $id = (int)($_GET['id'] ?? 0); // id_empleado
-  if (!$id) bad('ID inválido');
+$action = $_GET['action'] ?? '';
+$pdo = DB::conn(); // Debe devolver un PDO (PostgreSQL)
 
-  // Incluye 'firma' para poder verificar/editar desde el modal (admin)
-  $st = $pdo->prepare("SELECT id_empleado, codigo_empleado, nombre, apellido, cargo, turno, firma, foto, unidad_medica FROM empleados WHERE id_empleado = ?");
-  $st->execute([$id]);
-  $emp = $st->fetch(PDO::FETCH_ASSOC);
-  if (!$emp) bad('No encontrado');
+try {
+  if ($action === 'list') {
+    // Parámetros
+    $page  = max(1, (int)($_GET['page'] ?? 1));
+    $limit = (int)($_GET['limit'] ?? 5);
+    if ($limit < 1 || $limit > 100) $limit = 5;
+    $q     = trim((string)($_GET['q'] ?? ''));
 
-  $s = $pdo->prepare("
-    SELECT id_horario, dia_semana, entrada, salida, tolerancia_minutos AS tolerancia_min, activo
-    FROM horarios
-    WHERE id_empleado = ?
-    ORDER BY dia_semana
-  ");
-  $s->execute([$id]);
-  $emp['horario'] = $s->fetchAll(PDO::FETCH_ASSOC);
-
-  ok(['data' => $emp]);
-}
-
-/* ===================== CREATE/UPDATE ==================== */
-elseif ($action === 'create' || $action === 'update') {
-  $data = json_decode(file_get_contents('php://input'), true);
-  if (!is_array($data)) bad('JSON inválido');
-  if (($data['csrf'] ?? '') !== ($_SESSION['csrf'] ?? '')) bad('CSRF inválido');
-
-  $codigo   = trim($data['codigo_empleado'] ?? '');
-  $nombre   = trim($data['nombre'] ?? '');
-  $apellido = trim($data['apellido'] ?? '');
-  $turno    = trim($data['turno'] ?? '');
-  $cargo    = trim($data['cargo'] ?? '');
-  $foto = trim($data['foto'] ?? '');
-  $unidad_medica = trim($data['unidad_medica'] ?? '');
-  $horario  = $data['horario'] ?? [];
-  $firma    = trim($data['firma'] ?? '');   // Base64 del template
-
-  if ($codigo === '' || mb_strlen($codigo) > 20) bad('Código obligatorio (máx 20)');
-  if (!preg_match('/^\d+$/', $codigo)) bad('El código debe ser numérico');
-  if ($nombre === '' || mb_strlen($nombre) > 50) bad('Nombre obligatorio');
-  if ($apellido === '' || mb_strlen($apellido) > 50) bad('Apellido obligatorio');
-  if ($cargo === '' || mb_strlen($cargo) > 50) bad('Cargo obligatorio');
-  if ($turno === '' || mb_strlen($turno) > 50) bad('Turno obligatorio');
-  if ($foto === '' || mb_strlen($foto) > 100) bad('La foto es invalida') ;
-  if($unidad_medica === '' || mb_strlen($unidad_medica) > 50) bad('La unidad medica es obligatoria');
-  if ($firma === '') { $firma = null; }
-
-  $idEmp = (int)$codigo;
-
-  try {
-    $pdo->beginTransaction();
-
-    if ($action === 'create') {
-      $q = $pdo->prepare("SELECT 1 FROM empleados WHERE id_empleado = ? OR codigo_empleado = ? LIMIT 1");
-      $q->execute([$idEmp, $codigo]);
-      if ($q->fetchColumn()) { $pdo->rollBack(); bad('El código ya existe'); }
-
-      $ins = $pdo->prepare("
-        INSERT INTO empleados (id_empleado, codigo_empleado, nombre, apellido, cargo, turno, firma, foto, unidad_medica)
-        VALUES (?,?,?,?,?,?,?,?,?)
-      ");
-      $ins->execute([$idEmp, $codigo, $nombre, $apellido, $cargo, $turno, $firma, $foto, $unidad_medica]);
-      $id = $idEmp;
-
-    } else {
-      $idBefore = (int)($data['id_empleado'] ?? 0);
-      if (!$idBefore) { $pdo->rollBack(); bad('ID requerido'); }
-
-      $q = $pdo->prepare("
-        SELECT 1
-          FROM empleados
-         WHERE (id_empleado = ? OR codigo_empleado = ?)
-           AND id_empleado <> ?
-         LIMIT 1
-      ");
-      $q->execute([$idEmp, $codigo, $idBefore]);
-      if ($q->fetchColumn()) { $pdo->rollBack(); bad('El código ya existe'); }
-
-      $pdo->prepare("DELETE FROM horarios WHERE id_empleado = ?")->execute([$idBefore]);
-
-      $up = $pdo->prepare("
-        UPDATE empleados
-           SET id_empleado = ?, codigo_empleado = ?, nombre = ?, apellido = ?, cargo = ?, turno = ?, foto = ?, unidad_medica = ?, 
-               firma = COALESCE(?, firma)
-         WHERE id_empleado = ?
-      ");
-      $up->execute([$idEmp, $codigo, $nombre, $apellido, $cargo, $turno, $foto, $unidad_medica, $firma, $idBefore]);
-
-      $id = $idEmp;
+    $where = '';
+    $params = [];
+    if ($q !== '') {
+      $where = "WHERE (clave_acceso ILIKE :q OR rol ILIKE :q
+                 OR CAST(id_empleado AS TEXT) ILIKE :q
+                 OR CAST(id_usuario  AS TEXT) ILIKE :q)";
+      $params[':q'] = '%'.$q.'%';
     }
 
-    if (is_array($horario)) {
-      $hins = $pdo->prepare("
-        INSERT INTO horarios (id_empleado, dia_semana, entrada, salida, tolerancia_minutos, activo)
-        VALUES (?,?,?,?,?,?)
-      ");
-      foreach ($horario as $h) {
-        $dia = (int)($h['dia_semana'] ?? 0);
-        if ($dia < 1 || $dia > 7) continue;
-        $activo = !empty($h['activo']);
-        if (!$activo) continue;
+    $sqlCount = "SELECT COUNT(*) FROM usuarios $where";
+    $st = $pdo->prepare($sqlCount);
+    foreach($params as $k=>$v){ $st->bindValue($k, $v, PDO::PARAM_STR); }
+    $st->execute();
+    $total = (int)$st->fetchColumn();
 
-        $ent = norm_time($h['entrada'] ?? '');
-        $sal = norm_time($h['salida']  ?? '');
-        if ($ent === null || $sal === null) {
-          $pdo->rollBack();
-          bad("Faltan horas válidas para el día {$dia} (formato HH:MM).");
-        }
-        $tol = (int)($h['tolerancia_minutos'] ?? $h['tolerancia_min'] ?? 10);
-        $hins->execute([$id, $dia, $ent, $sal, $tol, true]);
-      }
+    $pages  = max(1, (int)ceil($total / $limit));
+    $offset = ($page - 1) * $limit;
+
+    $sql = "SELECT id_usuario, id_empleado, clave_acceso, rol, fecha_creacion
+            FROM usuarios
+            $where
+            ORDER BY id_usuario DESC
+            LIMIT :limit OFFSET :offset";
+    $st = $pdo->prepare($sql);
+    foreach($params as $k=>$v){ $st->bindValue($k, $v, PDO::PARAM_STR); }
+    $st->bindValue(':limit',  $limit,  PDO::PARAM_INT);
+    $st->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $st->execute();
+    $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+    json_out(['ok'=>true, 'rows'=>$rows, 'total'=>$total, 'pages'=>$pages]);
+  }
+
+  if ($action === 'get') {
+    $id = (int)($_GET['id'] ?? 0);
+    if ($id <= 0) json_out(['ok'=>false,'msg'=>'ID inválido'], 400);
+
+    $st = $pdo->prepare("SELECT id_usuario, id_empleado, clave_acceso, rol, fecha_creacion
+                         FROM usuarios WHERE id_usuario = :id");
+    $st->execute([':id'=>$id]);
+    $data = $st->fetch(PDO::FETCH_ASSOC);
+    if (!$data) json_out(['ok'=>false,'msg'=>'No encontrado'], 404);
+
+    json_out(['ok'=>true,'data'=>$data]);
+  }
+
+  if ($action === 'create') {
+    $raw = file_get_contents('php://input');
+    $p = json_decode($raw, true) ?: [];
+
+    $id_empleado  = isset($p['id_empleado']) ? (int)$p['id_empleado'] : 0;
+    $clave        = trim((string)($p['clave_acceso'] ?? ''));
+    $rol          = trim((string)($p['rol'] ?? ''));
+    $passPlain    = trim((string)($p['contrasena'] ?? ''));
+
+    if ($id_empleado <= 0)          json_out(['ok'=>false,'msg'=>'id_empleado inválido'], 400);
+    if ($clave === '')               json_out(['ok'=>false,'msg'=>'clave_acceso requerido'], 400);
+    if ($rol === '')                 json_out(['ok'=>false,'msg'=>'rol requerido'], 400);
+    if ($passPlain === '' || strlen($passPlain) < 6)
+      json_out(['ok'=>false,'msg'=>'contraseña requerida (mín. 6 caracteres)'], 400);
+
+    $hash = password_hash($passPlain, PASSWORD_BCRYPT, ['cost'=>12]);
+
+    $sql = "INSERT INTO usuarios (id_empleado, clave_acceso, rol, contrasena)
+            VALUES (:id_empleado, :clave, :rol, :pass)
+            RETURNING id_usuario";
+    $st = $pdo->prepare($sql);
+    $st->execute([
+      ':id_empleado'=>$id_empleado,
+      ':clave'=>$clave,
+      ':rol'=>$rol,
+      ':pass'=>$hash
+    ]);
+    $newId = (int)$st->fetchColumn();
+
+    json_out(['ok'=>true,'id'=>$newId]);
+  }
+
+  if ($action === 'update') {
+    $raw = file_get_contents('php://input');
+    $p = json_decode($raw, true) ?: [];
+
+    $id_usuario   = isset($p['id_usuario']) ? (int)$p['id_usuario'] : 0;
+    $id_empleado  = isset($p['id_empleado']) ? (int)$p['id_empleado'] : 0;
+    $clave        = trim((string)($p['clave_acceso'] ?? ''));
+    $rol          = trim((string)($p['rol'] ?? ''));
+    $passPlain    = trim((string)($p['contrasena'] ?? ''));
+
+    if ($id_usuario <= 0)           json_out(['ok'=>false,'msg'=>'ID inválido'], 400);
+    if ($id_empleado <= 0)          json_out(['ok'=>false,'msg'=>'id_empleado inválido'], 400);
+    if ($clave === '')               json_out(['ok'=>false,'msg'=>'clave_acceso requerido'], 400);
+    if ($rol === '')                 json_out(['ok'=>false,'msg'=>'rol requerido'], 400);
+
+    // Armado dinámico si cambia contraseña
+    $set = "id_empleado = :id_empleado, clave_acceso = :clave, rol = :rol";
+    $params = [
+      ':id_empleado'=>$id_empleado,
+      ':clave'=>$clave,
+      ':rol'=>$rol,
+      ':id'=>$id_usuario
+    ];
+    if ($passPlain !== '') {
+      if (strlen($passPlain) < 6) json_out(['ok'=>false,'msg'=>'La contraseña debe tener al menos 6 caracteres'], 400);
+      $set .= ", contrasena = :pass";
+      $params[':pass'] = password_hash($passPlain, PASSWORD_BCRYPT, ['cost'=>12]);
     }
 
-    $pdo->commit();
-    ok();
+    $sql = "UPDATE usuarios SET $set WHERE id_usuario = :id";
+    $st = $pdo->prepare($sql);
+    $st->execute($params);
 
-  } catch (\Throwable $e) {
-    if ($pdo->inTransaction()) $pdo->rollBack();
-    bad($e->getMessage());
+    json_out(['ok'=>true,'updated'=>$st->rowCount()]);
   }
-}
 
-/* ======================== DELETE ======================== */
-elseif ($action === 'delete') {
-  $data = json_decode(file_get_contents('php://input'), true);
-  if (!is_array($data)) bad('JSON inválido');
-  if (($data['csrf'] ?? '') !== ($_SESSION['csrf'] ?? '')) bad('CSRF inválido');
+  if ($action === 'delete') {
+    $raw = file_get_contents('php://input');
+    $p = json_decode($raw, true) ?: [];
+    $id = isset($p['id']) ? (int)$p['id'] : 0;
+    if ($id <= 0) json_out(['ok'=>false,'msg'=>'ID inválido'], 400);
 
-  $id = (int)($data['id'] ?? 0);
-  if (!$id) bad('ID inválido');
+    $st = $pdo->prepare("DELETE FROM usuarios WHERE id_usuario = :id");
+    $st->execute([':id'=>$id]);
 
-  try {
-    $pdo->beginTransaction();
-    $pdo->prepare("DELETE FROM horarios  WHERE id_empleado = ?")->execute([$id]);
-    $pdo->prepare("DELETE FROM empleados WHERE id_empleado = ?")->execute([$id]);
-    $pdo->commit();
-    ok();
-  } catch (\Throwable $e) {
-    if ($pdo->inTransaction()) $pdo->rollBack();
-    bad($e->getMessage());
+    if ($st->rowCount() === 0) json_out(['ok'=>false,'msg'=>'No encontrado'], 404);
+    json_out(['ok'=>true,'deleted'=>1]);
   }
+
+  json_out(['ok'=>false,'msg'=>'Acción no soportada'], 400);
+
+} catch (PDOException $e) {
+  // Errores de base de datos (incluye violaciones de FK/unique)
+  json_out(['ok'=>false,'msg'=>'DB error','detail'=>$e->getMessage()], 500);
+} catch (Throwable $e) {
+  json_out(['ok'=>false,'msg'=>'Error interno','detail'=>$e->getMessage()], 500);
 }
-
-/* ==================== CLEAR_FIRMA (solo BD) ==================== */
-elseif ($action === 'clear_firma') {
-  $data = json_decode(file_get_contents('php://input'), true);
-  if (!is_array($data)) bad('JSON inválido');
-  if (($data['csrf'] ?? '') !== ($_SESSION['csrf'] ?? '')) bad('CSRF inválido');
-
-  $id = (int)($data['id'] ?? 0);
-  if (!$id) bad('ID inválido');
-
-  $st = $pdo->prepare("UPDATE empleados SET firma = NULL WHERE id_empleado = ?");
-  $st->execute([$id]);
-  ok();
-}
-
-else { bad('Acción no soportada'); }

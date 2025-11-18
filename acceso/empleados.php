@@ -119,7 +119,7 @@ $csrf = $_SESSION['csrf'];
   <div class="profile-back" id="profBack" aria-hidden="true">
     <div class="profile">
       <div id="profTitle" class="title">BIENVENIDO</div>
-      <img id="profAvatar" class="avatar" src="" alt="Foto del empleado">
+      <img id="profAvatar" class="avatar" src="/assets/profiles-img/perfil_default.jpg" alt="Foto del empleado">
       <div class="kv" id="profName">NOMBRE EMPLEADO</div>
       <div class="mt-2"><span class="fw-semibold">Enlace:</span> <span id="profEnlace"></span></div>
       <div class="mt-1"><span class="fw-semibold">Unidad:</span> <span id="profUnidad"></span></div>
