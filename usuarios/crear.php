@@ -70,8 +70,6 @@ $NAVBAR = $ROOT . '/components/navbar.php';
       background-position:center center;
       background-size: var(--bg-size) auto;
       background-attachment:fixed;
-      opacity:.10;
-      filter:saturate(.95) brightness(1.02) contrast(1.03);
       pointer-events:none;
     }
 

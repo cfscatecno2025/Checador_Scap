@@ -1,6 +1,7 @@
 <?php
 /**
  * /Checador_Scap/empleados/crear.php
+ * Gestión de empleados + botón "Agregar huella" que abre modal tipo kiosko.
  */
 session_start();
 $ROOT = dirname(__DIR__);
@@ -28,10 +29,17 @@ $NAVBAR = $ROOT . '/components/navbar.php';
     .sheet{width:min(920px,96vw);max-height:calc(100dvh - 40px);margin:auto;background:#fff;border-radius:14px;display:flex;flex-direction:column}
     .sheet-h{padding:14px 16px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between}
     .sheet-c{padding:16px;overflow:auto}
+    .sheet .x{position:absolute;right:14px;top:8px;font-size:24px;cursor:pointer}
     .row-actions{display:flex;gap:8px;flex-wrap:wrap}
     .pill{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid #e5e7eb}
     .day-row{display:grid;grid-template-columns:110px 1fr 1fr 140px 90px;gap:8px;align-items:center;margin-bottom:8px}
     .hr{height:1px;background:#e5e7eb;margin:14px 0}
+
+    /* Modal de huella tipo kiosko */
+    .fp-ico{width:180px;height:180px;margin:10px auto 6px;display:block}
+    .fp-modal-msg{min-height:22px;font-weight:600}
+    .fp-modal-msg.error{color:#dc2626}
+    .fp-modal-msg.ok{color:#16a34a}
   </style>
 </head>
 <body>
@@ -61,6 +69,8 @@ $NAVBAR = $ROOT . '/components/navbar.php';
           <th>Apellidos</th>
           <th>Cargo</th>
           <th>Turno</th>
+          <th>Foto</th>
+          <th>Adscrito</th>
           <th style="width:240px">Acciones</th>
         </tr>
       </thead>
@@ -73,9 +83,9 @@ $NAVBAR = $ROOT . '/components/navbar.php';
   <div class="d-flex gap-2 justify-content-center mt-2 flex-wrap" id="pager"></div>
 </div>
 
-<!-- ====== PANEL-MODAL ====== -->
+<!-- ====== PANEL-MODAL (CRUD) ====== -->
 <div class="sheet-back" id="modalBack" aria-hidden="true">
-  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="sheet position-relative" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="sheet-h">
       <strong id="modalTitle">Nuevo empleado</strong>
       <button class="btn btn-sm btn-outline-secondary" id="btnClose">Cerrar</button>
@@ -106,6 +116,24 @@ $NAVBAR = $ROOT . '/components/navbar.php';
             <label for="f_turno" class="form-label">Turno</label>
             <input class="form-control" id="f_turno" name="turno" maxlength="50" required>
           </div>
+          <div class="col-md-4">
+            <label for="f_foto" class="form-label">Foto perfil</label>
+            <input class="form-control" id="f_foto" name="foto" maxlength="100" required>
+          </div>
+
+          <!-- Adscrito + botón para abrir modal de huella -->
+          <div class="col-md-8">
+            <label for="f_unidad_medica" class="form-label">Adscrito</label>
+            <input class="form-control" id="f_unidad_medica" name="unidad_medica" maxlength="50" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label d-block">Huella dactilar</label>
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" class="btn btn-primary" id="btnOpenFP">Agregar huella</button>
+              <span id="fpStatus" class="text-muted small">Sin huella capturada.</span>
+            </div>
+            <input type="hidden" name="firma" id="f_firma">
+          </div>
         </div>
 
         <div class="hr"></div>
@@ -116,25 +144,35 @@ $NAVBAR = $ROOT . '/components/navbar.php';
         <div id="days"></div>
 
         <div class="hr"></div>
-        <!-- === Huella dactilar (ZKTeco) === -->
-        <input type="hidden" name="firma" id="f_firma">
-        <div class="mb-2 d-flex align-items-center gap-2">
-          <strong>Huella dactilar</strong>
-          <span class="text-muted small">Captura/verifica con el servicio local.</span>
-        </div>
-        <div class="row-actions mb-2">
-          <button type="button" class="btn btn-primary" id="btnFPEnroll">Capturar huella</button>
-          <button type="button" class="btn btn-outline-secondary" id="btnFPVerify">Probar</button>
-          <button type="button" class="btn btn-outline-danger" id="btnFPClear">Borrar</button>
-        </div>
-        <div class="text-muted" id="fpStatus">Sin huella capturada.</div>
-
         <div class="d-flex gap-2 justify-content-end mt-3">
           <button type="button" class="btn btn-outline-secondary" id="btnEditToggle" hidden>Editar</button>
           <button type="button" class="btn btn-outline-danger" id="btnDelete" hidden>Eliminar</button>
           <button type="submit" class="btn btn-primary" id="btnSave">Guardar</button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL DE HUELLA (tipo kiosko) ====== -->
+<div class="sheet-back" id="fpBack" aria-hidden="true">
+  <div class="sheet position-relative" style="width:min(740px,95vw)">
+    <div class="x" id="fpClose" aria-label="Cerrar">×</div>
+    <div class="h3 fw-bold text-center">AGREGAR HUELLA</div>
+    <div class="h5 text-muted text-center mb-2">Por favor escanea tu huella</div>
+
+    <svg class="fp-ico" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M7.5 8.5C8 7 9.7 6 12 6c3 0 4.5 2 4.5 4.5 0 1.8-.6 3.6-1.4 5.1" stroke="#2563eb" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M9 12c0-1.7 1-3 3-3s3 1.3 3 3c0 2.7-1 5.5-2.8 7.5" stroke="#2563eb" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M5.5 14c.7-3.5 3.2-6 6.5-6 3.9 0 6.5 3 6.5 7.5 0 2.3-.7 4.3-1.8 6" stroke="#2563eb" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+
+    <div id="fpModalMsg" class="fp-modal-msg text-muted text-center">Listo para capturar</div>
+
+    <div class="d-flex gap-2 justify-content-center mt-3 mb-2">
+      <button type="button" class="btn btn-primary" id="btnModalEnroll">Capturar</button>
+      <button type="button" class="btn btn-outline-secondary" id="btnModalVerify">Probar</button>
+      <button type="button" class="btn btn-outline-danger" id="btnModalClear">Borrar</button>
     </div>
   </div>
 </div>
@@ -221,6 +259,8 @@ function gatherForm(){
     turno: fd.get('turno').trim(),
     cargo: fd.get('cargo').trim(),
     horario: [],
+    foto: fd.get('foto').trim(),
+    unidad_medica: fd.get('unidad_medica').trim(),
     firma: (document.getElementById('f_firma').value || null)
   };
   DAYS.forEach(d=>{
@@ -248,11 +288,14 @@ function openModal(mode, data){
   $frm.reset(); renderDays([]);
   $btnDelete.hidden = true; $btnEditToggle.hidden = true;
 
+  // Estado inicial de huella en label
+  const setFpStatus = (txt)=> document.getElementById('fpStatus').textContent = txt;
+
   if (mode === 'create'){
     $title.textContent = 'Nuevo empleado';
     $frm.f_codigo.readOnly = false;
     document.getElementById('f_firma').value = "";
-    document.getElementById('fpStatus').textContent = "Sin huella capturada.";
+    setFpStatus('Sin huella capturada.');
     setReadOnly(false);
 
   } else if (mode === 'edit'){
@@ -263,10 +306,12 @@ function openModal(mode, data){
     $frm.f_apellido.value = data.apellido || '';
     $frm.f_cargo.value = data.cargo || '';
     $frm.f_turno.value = data.turno || '';
+    $frm.f_foto.value = data.foto || '';
+    $frm.f_unidad_medica.value = data.unidad_medica || '';
     $frm.f_codigo.readOnly = true;
     renderDays(data.horario||[]);
     document.getElementById('f_firma').value = (data.firma||"");
-    document.getElementById('fpStatus').textContent = (data.firma ? "Huella cargada ✔" : "Sin huella capturada.");
+    setFpStatus(data.firma ? 'Huella cargada ✔' : 'Sin huella capturada.');
     setReadOnly(false);
     $btnDelete.hidden = false;
 
@@ -278,15 +323,14 @@ function openModal(mode, data){
     $frm.f_apellido.value = data.apellido || '';
     $frm.f_cargo.value = data.cargo || '';
     $frm.f_turno.value = data.turno || '';
+    $frm.f_foto.value = data.foto || '';
+    $frm.f_unidad_medica.value = data.unidad_medica || '';
     renderDays(data.horario||[]);
     document.getElementById('f_firma').value = (data.firma||"");
-    document.getElementById('fpStatus').textContent = (data.firma ? "Huella cargada ✔" : "Sin huella capturada.");
+    setFpStatus(data.firma ? 'Huella cargada ✔' : 'Sin huella capturada.');
     setReadOnly(true);
     $btnEditToggle.hidden = false;
   }
-
-  // abre lector para reducir latencia
-  fpOpen();
 
   $modalBack.style.display = 'flex';
   $modalBack.setAttribute('aria-hidden','false');
@@ -316,6 +360,8 @@ async function load(page=1){
           <td>${r.apellido||''}</td>
           <td>${r.cargo||''}</td>
           <td>${r.turno||''}</td>
+          <td>${r.foto||''}</td>
+          <td>${r.unidad_medica||''}</td>
           <td>
             <div class="row-actions">
               <button class="btn btn-sm btn-outline-secondary" data-act="view" data-id="${r.id_empleado}">Ver horario</button>
@@ -327,7 +373,7 @@ async function load(page=1){
     }
     renderPager();
   }catch(_){
-    $tbody.innerHTML = `<tr><td colspan="6" class="text-danger">Error de red</td></tr>`;
+    $tbody.innerHTML = `<tr><td colspan="7" class="text-danger">Error de red</td></tr>`;
     showToastError('No se pudo cargar el listado');
   }
 }
@@ -414,7 +460,6 @@ $frm.addEventListener('submit', async (e)=>{
 });
 
 /* ===== Servicio de huella local (Java) ===== */
-// Llama directo en HTTP; usa proxy en HTTPS
 const FP_PROXY = '<?= rtrim(dirname($_SERVER["REQUEST_URI"]), "/") ?>/../fingerprint/proxy.php?p=';
 async function fpFetch(path, opts={}) {
   const isHttps = location.protocol === 'https:';
@@ -423,22 +468,77 @@ async function fpFetch(path, opts={}) {
 }
 async function fpOpen(){ try{ await fpFetch("api/device/open"); }catch{} }
 
+/* ===== Modal de huella ===== */
+const $fpBack  = document.getElementById('fpBack');
+const $fpClose = document.getElementById('fpClose');
+const $fpModalMsg = document.getElementById('fpModalMsg');
+const $fpStatus = document.getElementById('fpStatus');
 
-async function enrollFingerprint(){
-  try{
-    await fpOpen();
-    const r = await fpFetch("api/enroll", { method:"POST" });
-    const j = await r.json();
-    if (!j.ok || !j.template) throw new Error(j.error || "Fallo al enrolar");
-    document.getElementById('f_firma').value = j.template;
-    document.getElementById('fpStatus').textContent = "Huella capturada ✔";
-    showToastSuccess("Huella capturada");
-  }catch(e){ showToastError(e.message || "No se pudo capturar la huella"); }
+function setFpModalMsg(txt, mode='info'){
+  $fpModalMsg.classList.remove('ok','error','text-muted');
+  if(mode==='ok') $fpModalMsg.classList.add('ok');
+  else if(mode==='error') $fpModalMsg.classList.add('error');
+  else $fpModalMsg.classList.add('text-muted');
+  $fpModalMsg.textContent = txt;
+}
+function updateSmallStatus(){
+  const has = (document.getElementById('f_firma').value || '').trim() !== '';
+  $fpStatus.textContent = has ? 'Huella cargada ✔' : 'Sin huella capturada.';
 }
 
-async function verifyFingerprint(){
-  const tpl = (document.getElementById('f_firma').value || "").trim();
-  if (!tpl) { showToastError("No hay huella guardada"); return; }
+function openFpModal(){
+  setFpModalMsg('Listo para capturar','info');
+  $fpBack.style.display = 'flex';
+  $fpBack.setAttribute('aria-hidden','false');
+  fpOpen();
+}
+function closeFpModal(){
+  $fpBack.style.display = 'none';
+  $fpBack.setAttribute('aria-hidden','true');
+  updateSmallStatus();
+}
+
+document.getElementById('btnOpenFP').addEventListener('click', openFpModal);
+$fpClose.addEventListener('click', closeFpModal);
+document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeFpModal(); });
+
+/* Capturar (enroll) */
+document.getElementById('btnModalEnroll').addEventListener('click', async ()=>{
+  try{
+    await fpOpen();
+    setFpModalMsg('coloca el dedo en el lector 3 veces…','info');
+    let template = null;
+
+    for(let intento=1; intento<=3; intento++){
+      const r = await fpFetch("api/enroll", { method:"POST" });
+      const j = await r.json();
+
+      if (j.ok && j.template){ template = j.template; break; }
+
+      if (j.ok && typeof j.samples_remaining === 'number' && j.samples_remaining > 0){
+        if (intento === 1) setFpModalMsg('Escanea otra vez…','info');
+        else setFpModalMsg('Escanea una última vez…','info');
+        continue;
+      }
+      if (!j.ok){ setFpModalMsg(j.error || 'No se pudo capturar. Intenta de nuevo.','error'); return; }
+    }
+
+    if (!template){ setFpModalMsg('No se obtuvo la plantilla. Intenta nuevamente.','error'); return; }
+
+    document.getElementById('f_firma').value = template;
+    setFpModalMsg('Huella registrada con éxito','ok');
+    showToastSuccess('Huella capturada');
+    updateSmallStatus();
+  }catch(e){
+    setFpModalMsg('Error con el lector. Revisa la conexión.','error');
+    showToastError(e.message || 'No se pudo capturar la huella');
+  }
+});
+
+/* Probar */
+document.getElementById('btnModalVerify').addEventListener('click', async ()=>{
+  const tpl = (document.getElementById('f_firma').value || '').trim();
+  if (!tpl){ setFpModalMsg('No hay huella guardada','error'); return; }
   try{
     await fpOpen();
     const r = await fpFetch("api/verify", {
@@ -446,23 +546,48 @@ async function verifyFingerprint(){
       body: JSON.stringify({ template: tpl })
     });
     const j = await r.json();
-    if (!j.ok) throw new Error(j.error || "Error en verificación");
-    if (j.match) showToastSuccess(`Coincidencia (score ${j.score})`);
-    else showToastError("No coincide");
-  }catch(e){ showToastError(e.message || "No se pudo verificar"); }
-}
+    if (!j.ok){ setFpModalMsg(j.error || 'Error en verificación','error'); return; }
+    if (j.match){
+      setFpModalMsg(`Coincidencia${j.score ? ' (score '+j.score+')' : ''}`,'ok');
+      showToastSuccess('Coincide');
+    }else{
+      setFpModalMsg('No coincide, intenta de nuevo','error');
+      showToastError('No coincide');
+    }
+  }catch(e){
+    setFpModalMsg('No se pudo verificar','error');
+    showToastError(e.message || 'No se pudo verificar');
+  }
+});
 
-function clearFingerprint(){
+/* Borrar (limpia BD si hay ID y el campo local) */
+document.getElementById('btnModalClear').addEventListener('click', async ()=>{
+  const id = +($frm.querySelector('#f_id').value || 0);
   document.getElementById('f_firma').value = "";
-  document.getElementById('fpStatus').textContent = "Sin huella capturada.";
-  showToast("Huella borrada en el formulario (recuerda Guardar).", "info", "Aviso");
-}
+  updateSmallStatus();
 
-document.getElementById('btnFPEnroll').addEventListener('click', enrollFingerprint);
-document.getElementById('btnFPVerify').addEventListener('click', verifyFingerprint);
-document.getElementById('btnFPClear').addEventListener('click', clearFingerprint);
+  if (id){
+    try{
+      const r = await fetch(API+'?action=clear_firma', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-CSRF':CSRF},
+        body: JSON.stringify({ csrf: CSRF, id })
+      });
+      const j = await r.json();
+      if(!j.ok){ setFpModalMsg(j.msg || 'No se pudo borrar en BD','error'); return; }
+      setFpModalMsg('Huella eliminada en BD. Puedes capturar una nueva.','ok');
+      showToastSuccess('Huella eliminada en BD');
+    }catch(_){
+      setFpModalMsg('Error de red al borrar en BD','error');
+    }
+  }else{
+    setFpModalMsg('Huella borrada (recuerda Guardar).','info');
+    showToast('Huella borrada en el formulario.', 'info', 'Aviso');
+  }
+});
 
 /* Init */
+function renderPager(){ /* igual que arriba */ const p=state.page,P=state.pages;const btn=(i,label=i,current=false)=>`<button class="btn btn-sm ${current?'btn-primary':'btn-outline-secondary'}" data-page="${i}">${label}</button>`;const parts=[];if(P<=1){$pager.innerHTML='';return;}const push=i=>parts.push(btn(i,i,i===p));push(1);if(p>3)parts.push('<span class="mx-1">…</span>');for(let i=Math.max(2,p-1);i<=Math.min(P-1,p+1);i++)push(i);if(p<P-2)parts.push('<span class="mx-1">…</span>');if(P>1)push(P);$pager.innerHTML=parts.join('');}
 renderDays([]); load(1);
 </script>
 </body>

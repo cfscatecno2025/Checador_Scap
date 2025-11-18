@@ -43,7 +43,7 @@ if ($action === 'list') {
   $params = [];
   $where = '';
   if ($q !== '') {
-    $where = "WHERE (CAST(id_empleado AS TEXT) ILIKE :q OR codigo_empleado ILIKE :q OR nombre ILIKE :q OR apellido ILIKE :q OR turno ILIKE :q OR cargo ILIKE :q)";
+    $where = "WHERE (CAST(id_empleado AS TEXT) ILIKE :q OR codigo_empleado ILIKE :q OR nombre ILIKE :q OR apellido ILIKE :q OR turno ILIKE :q OR cargo ILIKE :q OR foto ILIKE :q OR unidad_medica ILIKE :q)";
     $params[':q'] = "%{$q}%";
   }
 
@@ -53,7 +53,7 @@ if ($action === 'list') {
   $pages = max(1, (int)ceil($total / $limit));
 
   $st = $pdo->prepare("
-    SELECT id_empleado, codigo_empleado, nombre, apellido, cargo, turno
+    SELECT id_empleado, codigo_empleado, nombre, apellido, cargo, turno, foto, unidad_medica
     FROM empleados
     $where
     ORDER BY id_empleado DESC
@@ -74,7 +74,7 @@ elseif ($action === 'get') {
   if (!$id) bad('ID inválido');
 
   // Incluye 'firma' para poder verificar/editar desde el modal (admin)
-  $st = $pdo->prepare("SELECT id_empleado, codigo_empleado, nombre, apellido, cargo, turno, firma FROM empleados WHERE id_empleado = ?");
+  $st = $pdo->prepare("SELECT id_empleado, codigo_empleado, nombre, apellido, cargo, turno, firma, foto, unidad_medica FROM empleados WHERE id_empleado = ?");
   $st->execute([$id]);
   $emp = $st->fetch(PDO::FETCH_ASSOC);
   if (!$emp) bad('No encontrado');
@@ -102,6 +102,8 @@ elseif ($action === 'create' || $action === 'update') {
   $apellido = trim($data['apellido'] ?? '');
   $turno    = trim($data['turno'] ?? '');
   $cargo    = trim($data['cargo'] ?? '');
+  $foto = trim($data['foto'] ?? '');
+  $unidad_medica = trim($data['unidad_medica'] ?? '');
   $horario  = $data['horario'] ?? [];
   $firma    = trim($data['firma'] ?? '');   // Base64 del template
 
@@ -111,6 +113,8 @@ elseif ($action === 'create' || $action === 'update') {
   if ($apellido === '' || mb_strlen($apellido) > 50) bad('Apellido obligatorio');
   if ($cargo === '' || mb_strlen($cargo) > 50) bad('Cargo obligatorio');
   if ($turno === '' || mb_strlen($turno) > 50) bad('Turno obligatorio');
+  if ($foto === '' || mb_strlen($foto) > 100) bad('La foto es invalida') ;
+  if($unidad_medica === '' || mb_strlen($unidad_medica) > 50) bad('La unidad medica es obligatoria');
   if ($firma === '') { $firma = null; }
 
   $idEmp = (int)$codigo;
@@ -124,10 +128,10 @@ elseif ($action === 'create' || $action === 'update') {
       if ($q->fetchColumn()) { $pdo->rollBack(); bad('El código ya existe'); }
 
       $ins = $pdo->prepare("
-        INSERT INTO empleados (id_empleado, codigo_empleado, nombre, apellido, cargo, turno, firma)
-        VALUES (?,?,?,?,?,?,?)
+        INSERT INTO empleados (id_empleado, codigo_empleado, nombre, apellido, cargo, turno, firma, foto, unidad_medica)
+        VALUES (?,?,?,?,?,?,?,?,?)
       ");
-      $ins->execute([$idEmp, $codigo, $nombre, $apellido, $cargo, $turno, $firma]);
+      $ins->execute([$idEmp, $codigo, $nombre, $apellido, $cargo, $turno, $firma, $foto, $unidad_medica]);
       $id = $idEmp;
 
     } else {
@@ -148,11 +152,11 @@ elseif ($action === 'create' || $action === 'update') {
 
       $up = $pdo->prepare("
         UPDATE empleados
-           SET id_empleado = ?, codigo_empleado = ?, nombre = ?, apellido = ?, cargo = ?, turno = ?,
+           SET id_empleado = ?, codigo_empleado = ?, nombre = ?, apellido = ?, cargo = ?, turno = ?, foto = ?, unidad_medica = ?, 
                firma = COALESCE(?, firma)
          WHERE id_empleado = ?
       ");
-      $up->execute([$idEmp, $codigo, $nombre, $apellido, $cargo, $turno, $firma, $idBefore]);
+      $up->execute([$idEmp, $codigo, $nombre, $apellido, $cargo, $turno, $foto, $unidad_medica, $firma, $idBefore]);
 
       $id = $idEmp;
     }

@@ -63,7 +63,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
   }
 }
+
+$NAVBAR = $ROOT . '/components/navbar.php';
 ?>
+
+<?php if (file_exists($NAVBAR)) include $NAVBAR; ?>
 <!doctype html>
 <html lang="es">
 <head>
@@ -73,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <style>
     /* ===== Paleta clara (consistente con crear.php) ===== */
     :root{
-      --bg:#f6f8fb;
+      --bg:#fff;
       --card:#ffffff;
       --text:#0f172a;
       --muted:#64748b;
@@ -107,15 +111,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       background-position: center center;
       background-size: var(--bg-size) auto;
       background-attachment: fixed;
-      opacity:.10;
-      filter:saturate(.95) brightness(1.02) contrast(1.03);
+      
       pointer-events:none;
     }
 
-    .nombre-pagina{margin:0 0 6px;font-size:32px;line-height:1.2}
-    .descripcion-pagina{margin:0 0 18px;color:#475569}
-    .formulario{max-width:520px}
-    .campo{margin-bottom:12px}
+    .nombre-pagina{margin:0 0 6px;font-size:32px;line-height:1.2; text-align: center;}
+    .descripcion-pagina{margin:0 0 18px;color:#475569; text-align: center;}
+    .formulario{max-width:520px;}
+    .campo{margin-bottom:12px;}
     label{display:block;font-weight:600;margin-bottom:6px}
     input[type=text],input[type=password]{
       width:100%;padding:10px;border:2px solid var(--bd);border-radius:10px;background:#fff;
