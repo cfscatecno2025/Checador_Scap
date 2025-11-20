@@ -22,21 +22,37 @@ $csrf = $_SESSION['csrf'];
       --danger:#dc2626;
       --ink:#0f172a;
       --muted:#6b7280;
+      
+      /* imagen de fondo (opcional) */
+      --bg-image: url('/Checador_Scap/assets/img/logo_login_scap.jpg');
+      --bg-size: clamp(260px, 32vw, 520px); /* controla tamaño del fondo */
     }
-    body{background:#f5f7fb;}
-    .kiosk-nav{height:64px;background:#ffffff;box-shadow:0 2px 8px rgba(15,23,42,.05);display:flex;align-items:center;justify-content:space-between;padding:0 16px;}
+    body{background:#fff;}
+    .kiosk-nav{height:64px;background:#f5f7fb;box-shadow:f5f7fb0 2px 8px rgba(15,23,42,.05);display:flex;align-items:center;justify-content:space-between;padding:0 16px;}
     .brand{font-size:28px;font-weight:800;letter-spacing:.4px;color:var(--ink)}
-    .clockCard{background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 1px 6px rgba(15,23,42,.06)}
+    .clockCard{background:#f5f7fb;border-radius:14px;padding:16px 18px;box-shadow:0 1px 6px rgba(15,23,42,.06)}
     #bigClock{letter-spacing:1px;font-variant-numeric:tabular-nums}
     .status-pill{border-radius:999px;padding:6px 10px;font-size:12px}
     .status-pill-text{border-radius:999px;padding:3px 5px;font-size:12px; margin-left: 50px; margin-right: 50px; text-align: center; align-items: center}
     .tiles{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:24px}
     .tile{
-      background:#fff;border-radius:18px;box-shadow:0 4px 20px rgba(15,23,42,.08);
+      background:#f5f7fb;border-radius:18px;box-shadow:0 4px 20px rgba(15,23,42,.08);
       padding:28px;display:grid;place-items:center;cursor:pointer;user-select:none;
       transition:transform .08s ease, box-shadow .12s ease;
       min-height:320px;
     }
+     /* Fondo centrado, no ocupa toda la pantalla */
+    body::before{
+      content:"";
+      position:fixed; inset:0; z-index:-1;
+      background-image: var(--bg-image);
+      background-repeat:no-repeat;
+      background-position:center center;
+      background-size: var(--bg-size) auto;
+      background-attachment:fixed;
+      pointer-events:none;
+    }
+    
     .tile:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(15,23,42,.12)}
     .tile h2{font-size:38px;margin-bottom:14px}
     .tile svg{width:140px;height:140px}

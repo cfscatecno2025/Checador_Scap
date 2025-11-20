@@ -25,8 +25,13 @@ $DEFAULT_AVATAR = dirname($_SERVER['SCRIPT_NAME'], 2) . '/assets/profiles-img/pe
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body{background:#f6f8fb} .container{max-width:1100px}
-    .sheet-back{position:fixed;inset:0;display:none;z-index:1065;background:rgba(0,0,0,.45)}
+      :root{
+          /* imagen de fondo (opcional) */
+      --bg-image: url('/Checador_Scap/assets/img/logo_login_scap.jpg');
+      --bg-size: clamp(260px, 32vw, 520px); /* controla tamaño del fondo */
+      }
+    body{background:#fff} .container{max-width:1100px}
+    .sheet-back{position:fixed;inset:0;display:none;z-index:1065;background:#fff}
     .sheet{width:min(920px,96vw);max-height:calc(100dvh - 40px);margin:auto;background:#fff;border-radius:14px;display:flex;flex-direction:column}
     .sheet-h{padding:14px 16px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between}
     .sheet-c{padding:16px;overflow:auto}
@@ -35,6 +40,18 @@ $DEFAULT_AVATAR = dirname($_SERVER['SCRIPT_NAME'], 2) . '/assets/profiles-img/pe
     .pill{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid #e5e7eb}
     .day-row{display:grid;grid-template-columns:110px 1fr 1fr 140px 90px;gap:8px;align-items:center;margin-bottom:8px}
     .hr{height:1px;background:#e5e7eb;margin:14px 0}
+    
+     /* Fondo centrado, no ocupa toda la pantalla */
+    body::before{
+      content:"";
+      position:fixed; inset:0; z-index:-1;
+      background-image: var(--bg-image);
+      background-repeat:no-repeat;
+      background-position:center center;
+      background-size: var(--bg-size) auto;
+      background-attachment:fixed;
+      pointer-events:none;
+    }
 
     /* Foto */
     .avatar-preview{width:56px;height:56px;border-radius:999px;object-fit:cover;border:3px solid #e5e7eb;background:#f8fafc}
@@ -57,8 +74,8 @@ $DEFAULT_AVATAR = dirname($_SERVER['SCRIPT_NAME'], 2) . '/assets/profiles-img/pe
 
   <div class="d-flex gap-2 flex-wrap align-items-center mb-3">
     <button class="btn btn-primary" id="btnAdd">Agregar empleado</button>
-    <div class="d-flex gap-2 flex-grow-1" style="min-width:260px">
-      <input class="form-control" id="q" placeholder="Buscar por nombre o enlace…">
+    <div class="d-flex gap-2 flex-grow-1" style="min-width:260px;">
+        <input class="form-control" style="background: #f6f8fb" id="q" placeholder="Buscar por nombre o enlace…">
       <button class="btn btn-outline-secondary" id="btnSearch">Buscar</button>
       <button class="btn btn-outline-secondary" id="btnClear">Limpiar</button>
     </div>
