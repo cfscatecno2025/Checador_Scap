@@ -32,6 +32,12 @@ $NAVBAR = $ROOT . '/components/navbar.php';
     .state-jus{background:#eefbf7;color:#0b8063}
     .table thead th{position:sticky; top:0; background:#fff; z-index:1}
     .toast-container{z-index:1086}
+
+    /* ===== Visor en modal (añadido) ===== */
+    .viewer-header .btn{--bs-btn-padding-y:.25rem; --bs-btn-padding-x:.6rem}
+    #imgPane{min-height:70vh; background:#0b0e14; overflow:auto; display:flex; align-items:center; justify-content:center}
+    #imgDoc{max-width:none; max-height:none; user-select:none; transform-origin:center center}
+    #pdfPane{width:100%; height:80vh; border:0; background:#111}
   </style>
 </head>
 <body>
@@ -134,6 +140,35 @@ $NAVBAR = $ROOT . '/components/navbar.php';
   </div>
 </div>
 
+<!-- ===== Modal Visor de justificantes (nuevo) ===== -->
+<div class="modal fade" id="mdlViewDoc" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header viewer-header">
+        <h5 class="modal-title" id="viewerTitle">Documento</h5>
+        <div class="ms-auto d-flex align-items-center gap-2">
+          <!-- Controles solo IMAGEN -->
+          <div id="imgTools" class="btn-group" role="group" aria-label="Zoom" hidden>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="zoomOut">−</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="zoomIn">＋</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="zoomFit">Ajustar</button>
+            <span id="zoomPct" class="ms-2 text-muted small">100%</span>
+          </div>
+          <a id="btnDownload" class="btn btn-outline-primary btn-sm" href="#" download>Descargar</a>
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="btnPrint" title="Imprimir">Imprimir</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+      <div class="modal-body p-0">
+        <div id="imgPane" hidden>
+          <img id="imgDoc" alt="Documento">
+        </div>
+        <iframe id="pdfPane" hidden></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 const API  = '<?= htmlspecialchars(rtrim(dirname($_SERVER["REQUEST_URI"]), "/"), ENT_QUOTES) ?>/api.php';
@@ -218,7 +253,9 @@ async function load(page=1){
         <td>${r.salida  || '—'}</td>
         <td>${stateBadge(r.estado)}</td>
         <td>
-          ${r.justificante_url ? `<a href="${r.justificante_url}" target="_blank" class="btn btn-sm btn-outline-secondary">Ver</a>` : '—'}
+          ${r.justificante_url
+            ? `<button class="btn btn-sm btn-outline-secondary" data-act="viewDoc" data-url="${r.justificante_url}" data-name="${(r.empleado?.nombre||'') + ' ' + (r.empleado?.apellido||'')}">Ver</button>`
+            : '—'}
         </td>
         <td>
           <button class="btn btn-sm btn-primary" data-act="just" data-id="${r.empleado?.id}" data-name="${(r.empleado?.nombre||'')+' '+(r.empleado?.apellido||'')}" data-date="${r.fecha}">Justificar</button>
@@ -251,17 +288,26 @@ document.getElementById('btnClear').addEventListener('click', ()=>{
 
 /* Abrir modal de justificante desde una fila */
 document.addEventListener('click', (e)=>{
-  const b = e.target.closest('button[data-act="just"]'); if(!b) return;
-  const id   = b.dataset.id;
-  const name = b.dataset.name || '';
-  const date = b.dataset.date;
-  document.getElementById('j_id').value = id;
-  document.getElementById('j_emp_name').value = name;
-  document.getElementById('j_start').value = state.start || date;
-  document.getElementById('j_end').value   = state.end   || date;
-  document.getElementById('j_motivo').value = '';
-  document.getElementById('j_file').value = '';
-  new bootstrap.Modal(document.getElementById('mdlJust')).show();
+  // Justificar
+  const bJust = e.target.closest('button[data-act="just"]');
+  if(bJust){
+    const id   = bJust.dataset.id;
+    const name = bJust.dataset.name || '';
+    const date = bJust.dataset.date;
+    document.getElementById('j_id').value = id;
+    document.getElementById('j_emp_name').value = name;
+    document.getElementById('j_start').value = state.start || date;
+    document.getElementById('j_end').value   = state.end   || date;
+    document.getElementById('j_motivo').value = '';
+    document.getElementById('j_file').value = '';
+    new bootstrap.Modal(document.getElementById('mdlJust')).show();
+    return;
+  }
+  // Ver documento (nuevo)
+  const bView = e.target.closest('button[data-act="viewDoc"]');
+  if(bView){
+    openViewer(bView.getAttribute('data-url'), bView.getAttribute('data-name') || 'Documento');
+  }
 });
 
 /* Enviar justificante (multipart) */
@@ -288,6 +334,88 @@ document.getElementById('frmJust').addEventListener('submit', async (e)=>{
   document.getElementById('f_start').value = start;
   document.getElementById('f_end').value = end;
 })();
+
+/* ========= Visor de documentos (PDF/Imagen) ========= */
+const mdlViewDoc = new bootstrap.Modal(document.getElementById('mdlViewDoc'), {backdrop:'static'});
+
+const pdfPane   = document.getElementById('pdfPane');
+const imgPane   = document.getElementById('imgPane');
+const imgDoc    = document.getElementById('imgDoc');
+const imgTools  = document.getElementById('imgTools');
+const zoomPct   = document.getElementById('zoomPct');
+const btnZoomIn = document.getElementById('zoomIn');
+const btnZoomOut= document.getElementById('zoomOut');
+const btnZoomFit= document.getElementById('zoomFit');
+const btnDownload = document.getElementById('btnDownload');
+const btnPrint    = document.getElementById('btnPrint');
+const viewerTitle = document.getElementById('viewerTitle');
+
+let scale = 1;
+const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
+function applyZoom(){ imgDoc.style.transform = `scale(${scale})`; zoomPct.textContent = `${Math.round(scale*100)}%`; }
+function fitImage(){
+  // ajusta la imagen al área visible del pane
+  const wrap = imgPane.getBoundingClientRect();
+  const w = imgDoc.naturalWidth || imgDoc.width || 1;
+  const h = imgDoc.naturalHeight || imgDoc.height || 1;
+  const s = Math.min((wrap.width*0.92)/w, (wrap.height*0.92)/h);
+  scale = clamp(s, 0.1, 6); applyZoom();
+}
+btnZoomIn.onclick  = ()=>{ scale = clamp(scale*1.2, 0.1, 6); applyZoom(); };
+btnZoomOut.onclick = ()=>{ scale = clamp(scale/1.2, 0.1, 6); applyZoom(); };
+btnZoomFit.onclick = ()=> fitImage();
+
+function openViewer(url, title='Documento'){
+  viewerTitle.textContent = title;
+  btnDownload.href = url;
+
+  const isPdf = /\.pdf(\?|#|$)/i.test(url);
+  if (isPdf){
+    imgPane.hidden = true; imgTools.hidden = true;
+    pdfPane.hidden = false;
+    // Visor nativo: toolbar y zoom ajustado al ancho
+    const hash = url.includes('#') ? '' : '#toolbar=1&navpanes=0&zoom=page-width';
+    pdfPane.src = url + hash;
+    btnPrint.onclick = ()=>{ try{ pdfPane.contentWindow.focus(); pdfPane.contentWindow.print(); }catch(e){} };
+  }else{
+    pdfPane.hidden = true;
+    imgPane.hidden = false; imgTools.hidden = false;
+    imgDoc.src = url;
+    imgDoc.onload = ()=>{ scale = 1; applyZoom(); fitImage(); };
+    // Imprimir imagen
+    btnPrint.onclick = ()=>{
+      const w = window.open('', '_blank');
+      if(!w){ return; }
+      w.document.write(`<img src="${url}" style="max-width:100%;"/>`);
+      w.document.close();
+      w.focus();
+      w.print();
+      // w.close(); // opcional
+    };
+  }
+  mdlViewDoc.show();
+}
+
+/* Pan con arrastre y zoom con rueda (IMAGEN) */
+let panning=false,startX=0,startY=0,scrollL=0,scrollT=0;
+imgPane.addEventListener('wheel', (e)=>{
+  if (imgPane.hidden) return; // pdf activo
+  e.preventDefault();
+  const delta = e.deltaY < 0 ? 1.1 : (1/1.1);
+  scale = clamp(scale*delta, 0.1, 6); applyZoom();
+}, {passive:false});
+imgPane.addEventListener('mousedown', (e)=>{
+  if (imgPane.hidden) return;
+  panning=true; startX=e.clientX; startY=e.clientY; scrollL=imgPane.scrollLeft; scrollT=imgPane.scrollTop;
+  imgPane.style.cursor='grabbing';
+});
+window.addEventListener('mouseup', ()=>{ panning=false; imgPane.style.cursor='default'; });
+imgPane.addEventListener('mousemove', (e)=>{
+  if(!panning) return;
+  imgPane.scrollLeft = scrollL - (e.clientX - startX);
+  imgPane.scrollTop  = scrollT  - (e.clientY - startY);
+});
+imgPane.addEventListener('dblclick', ()=>{ if(!imgPane.hidden) fitImage(); });
 </script>
 </body>
 </html>
