@@ -8,8 +8,6 @@ $rol  = strtolower(trim((string)($_SESSION['rol'] ?? '')));
 // Carga el navbar correspondiente
 $map = [
   'admin'    => $ROOT . '/components/navbar-admin.php',
-  'usuario'  => $ROOT . '/components/navbar-usuario.php',
-  'empleado' => $ROOT . '/components/navbar-empleado.php',
 ];
 
 $target = $map[$rol] ?? ($ROOT . '/components/navbar-usuario.php');

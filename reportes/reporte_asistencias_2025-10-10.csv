@@ -1,3 +1,0 @@
-fecha,id_empleado,codigo_empleado,nombre,apellido,hora_entrada,hora_salida,retardo_minutos,estado
-2025-10-10,1,8008,Hugo,Borraz,08:39:09.71205,08:39:15.418358,0,normal
-2025-10-10,2,8790,LUIS,CRUZ,08:32:53.33831,08:39:17.800999,0,normal

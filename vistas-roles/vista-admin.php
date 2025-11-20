@@ -151,12 +151,12 @@ if (file_exists($NAVBAR)) {
         Empleados
       </a>
 
-      <a class="btn btn-ghost" href="/Checador_Scap/asistencias/">
+      <a class="btn btn-ghost" href="/Checador_Scap/asistencias/registro.php">
         <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1a11 11 0 1 0 11 11A11.013 11.013 0 0 0 12 1Zm1 11h5a1 1 0 0 1 0 2h-6a1 1 0 0 1-1-1V6a1 1 0 0 1 2 0Z"/></svg>
         Asistencias
       </a>
 
-      <a class="btn btn-ghost" href="/Checador_Scap/reportes/">
+      <a class="btn btn-ghost" href="/Checador_Scap/reportes/registro_reportes.php">
         <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 3h2v18H3zM9 10h2v11H9zM15 6h2v15h-2zM21 14h-2v7h2z"/></svg>
         Reportes
       </a>

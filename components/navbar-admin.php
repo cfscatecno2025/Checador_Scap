@@ -8,7 +8,7 @@ require_once $ROOT . '/scripts/ensure_daily_close.php';
   <div class="nav__inner">
     <!--LOGO 1-->
     <a class="nav__logo1" href="/Checador_Scap/vistas-roles/vista-admin.php">
-      <img src="/Checador_Scap/assets/img/logo_gobierno_chiapas.png" alt="logo gop_chis" height="28">
+      <img src="/Checador_Scap/assets/img/logo_gobierno_chiapas_actualizado.png" alt="logo gop_chis" height="28">
     </a>
     <!-- LOGO 2-->
     <a class="nav__logo" href="/Checador_Scap/vistas-roles/vista-admin.php">

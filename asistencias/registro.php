@@ -47,6 +47,7 @@ $NAVBAR = $ROOT . '/components/navbar.php';
 
 <div class="container my-4">
   <div class="card card-soft p-3 mb-3">
+    <h3 class="mb-3">Gestión de asistencias</h3>
     <div class="row g-2 align-items-end">
       <div class="col-md-3">
         <label class="form-label">Desde</label>

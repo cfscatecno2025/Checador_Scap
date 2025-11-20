@@ -1,3 +1,0 @@
-fecha,id_empleado,codigo_empleado,nombre,apellido,hora_entrada,hora_salida,retardo_minutos,estado
-2025-10-04,1,8008,Hugo,Borraz,08:30:48.028107,,0,sin_horario
-2025-10-04,2,8790,LUIS,CRUZ,08:30:36.133326,08:30:52.650951,0,sin_horario
