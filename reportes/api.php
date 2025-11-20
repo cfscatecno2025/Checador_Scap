@@ -254,114 +254,135 @@ elseif ($action === 'generate' && $method === 'POST') {
   }
 
   ob_start();
-  ?>
-  <!doctype html>
-  <html>
-  <head>
-    <meta charset="utf-8">
-    <style>
-      @page { margin: 22mm 16mm 22mm 16mm; }
-      body{ font-family: DejaVu Sans, Arial, sans-serif; font-size: 11px; color:#111; }
-      .enc{ border:1px solid #000; }
-      .enc td{ border:1px solid #000; padding:6px 8px; }
-      .cen{ text-align:center; }
-      .mono{ font-variant-numeric: tabular-nums; }
-      .title{ font-size:16px; font-weight:700; margin:12px 0 6px 0; }
-      .meta{ margin: 6px 0 14px; font-size: 11px; }
-      .muted{ color:#555; }
-      table { border-collapse: collapse; width:100%; }
-      th, td { border: 1px solid #bbb; padding: 6px 8px; }
-      th { background: #f3f5f9; }
-      .nowrap{ white-space:nowrap; }
-    </style>
-  </head>
-  <body>
+?>
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    /* Márgenes más compactos y página horizontal */
+    @page { margin: 14mm 10mm 16mm 10mm; size: A4 landscape; }
 
-  <table class="enc" width="100%" cellspacing="0" cellpadding="0">
+    body{ font-family: DejaVu Sans, Arial, sans-serif; font-size: 10px; color:#111; }
+    .enc{ border:1px solid #000; }
+    .enc td{ border:1px solid #000; padding:4px 6px; }
+    .cen{ text-align:center; }
+    .mono{ font-variant-numeric: tabular-nums; }
+    .title{ font-size:15px; font-weight:700; margin:10px 0 6px 0; }
+    .meta{ margin: 6px 0 12px; font-size: 10px; }
+    .muted{ color:#555; }
+
+    table { border-collapse: collapse; width:100%; table-layout: fixed; }
+    th, td { border: 1px solid #bbb; padding: 4px 6px; line-height: 1.25; }
+    th { background: #f3f5f9; }
+    .nowrap{ white-space:nowrap; }
+    .wrap{ white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+
+<!-- Encabezado -->
+<table class="enc" width="100%" cellspacing="0" cellpadding="0">
+  <tr>
+    <td style="width:18%;text-align:center">
+      <?php if ($logoLeftURL): ?><img src="<?= htmlspecialchars($logoLeftURL) ?>" style="height:54px"><?php endif; ?>
+    </td>
+    <td class="cen" style="width:64%; font-weight:700;"><?= htmlspecialchars($ORG_STR) ?></td>
+    <td style="width:18%;text-align:center">
+      <?php if ($logoRightURL): ?><img src="<?= htmlspecialchars($logoRightURL) ?>" style="height:54px"><?php endif; ?>
+    </td>
+  </tr>
+  <tr>
+    <td class="cen" style="font-weight:700">Nombre del documento</td>
+    <td class="cen" rowspan="2" style="font-size:13px; font-weight:700">
+      <?= htmlspecialchars($DOC_NAME) ?>
+    </td>
+    <td class="cen" style="font-weight:700">Versión</td>
+  </tr>
+  <tr>
+    <td class="cen" style="font-size:12px"><?= htmlspecialchars($DOC_CODE) ?></td>
+    <td class="cen" style="font-size:12px"><?= htmlspecialchars($DOC_VER) ?></td>
+  </tr>
+</table>
+
+<div class="title"><?= htmlspecialchars(strtoupper($DOC_NAME . ' — ' . $tipo)) ?></div>
+<div class="meta">
+  <strong>Rango:</strong> <span class="mono"><?= htmlspecialchars($start) ?> — <?= htmlspecialchars($end) ?></span>
+  &nbsp; | &nbsp; <strong>Generado:</strong> <span class="mono"><?= htmlspecialchars($now) ?></span>
+  <?php if ($generado_por): ?>&nbsp; | &nbsp; <strong>Por:</strong> <?= htmlspecialchars($genName?:('#'.$generado_por)) ?><?php endif; ?>
+</div>
+
+<table>
+  <!-- Ancho fijo por columna para que no se desborde -->
+  <colgroup>
+    <col style="width:6%">
+    <col style="width:17%">
+    <col style="width:10%">
+    <col style="width:9%">
+    <col style="width:9%">
+    <col style="width:9%">
+    <col style="width:9%">
+    <col style="width:4%">
+    <col style="width:5%">
+    <col style="width:6%">
+    <col style="width:6%">
+    <col style="width:5%">
+    <col style="width:6%">
+  </colgroup>
+  <thead>
     <tr>
-      <td style="width:18%;text-align:center">
-        <?php if ($logoLeftURL): ?><img src="<?= htmlspecialchars($logoLeftURL) ?>" style="height:54px"><?php endif; ?>
-      </td>
-      <td class="cen" style="width:64%; font-weight:700;"><?= htmlspecialchars($ORG_STR) ?></td>
-      <td style="width:18%;text-align:center">
-        <?php if ($logoRightURL): ?><img src="<?= htmlspecialchars($logoRightURL) ?>" style="height:54px"><?php endif; ?>
-      </td>
+      <th class="nowrap">Enlace</th>
+      <th>Empleado</th>
+      <th>Unidad</th>
+      <th>Turno</th>
+      <th>Horario</th>
+      <th class="mono nowrap">1ª Entrada</th>
+      <th class="mono nowrap">Últ. Salida</th>
+      <th class="mono">Días</th>
+      <th class="mono">Asist.</th>
+      <th class="mono">Retardos</th>
+      <th class="mono">Incompl.</th>
+      <th class="mono">Faltas</th>
+      <th class="mono">Justif.</th>
     </tr>
+  </thead>
+  <tbody>
+    <?php foreach ($summary as $s): ?>
     <tr>
-      <td class="cen" style="font-weight:700">Nombre del documento</td>
-      <td class="cen" rowspan="2" style="font-size:13px; font-weight:700">
-        <?= htmlspecialchars($DOC_NAME) ?>
-      </td>
-      <td class="cen" style="font-weight:700">Versión</td>
+      <td class="mono nowrap"><?= (int)$s['id'] ?></td>
+      <td class="wrap"><?= htmlspecialchars(trim($s['nombre'].' '.$s['apellido'])) ?></td>
+      <td class="wrap"><?= htmlspecialchars($s['unidad_medica']) ?></td>
+      <td class="wrap"><?= htmlspecialchars($s['turno']) ?></td>
+      <td class="mono nowrap"><?= htmlspecialchars($s['horario']) ?></td>
+      <td class="mono nowrap"><?= htmlspecialchars($s['first_in']) ?></td>
+      <td class="mono nowrap"><?= htmlspecialchars($s['last_out']) ?></td>
+      <td class="mono" style="text-align:right"><?= (int)$s['dias'] ?></td>
+      <td class="mono" style="text-align:right"><?= (int)$s['asistencias'] ?></td>
+      <td class="mono" style="text-align:right"><?= (int)$s['retardos'] ?></td>
+      <td class="mono" style="text-align:right"><?= (int)$s['incompletas'] ?></td>
+      <td class="mono" style="text-align:right"><?= (int)$s['faltas'] ?></td>
+      <td class="mono" style="text-align:right"><?= (int)$s['justificadas'] ?></td>
     </tr>
-    <tr>
-      <td class="cen" style="font-size:12px"><?= htmlspecialchars($DOC_CODE) ?></td>
-      <td class="cen" style="font-size:12px"><?= htmlspecialchars($DOC_VER) ?></td>
-    </tr>
-  </table>
+    <?php endforeach; ?>
+  </tbody>
+</table>
 
-  <div class="title"><?= htmlspecialchars(strtoupper($DOC_NAME . ' — ' . $tipo)) ?></div>
-  <div class="meta">
-    <strong>Rango:</strong> <span class="mono"><?= htmlspecialchars($start) ?> — <?= htmlspecialchars($end) ?></span>
-    &nbsp; | &nbsp; <strong>Generado:</strong> <span class="mono"><?= htmlspecialchars($now) ?></span>
-    <?php if ($generado_por): ?>&nbsp; | &nbsp; <strong>Por:</strong> <?= htmlspecialchars($genName?:('#'.$generado_por)) ?><?php endif; ?>
-  </div>
+<p class="muted" style="margin-top:8px">
+  Nota: “Incompleta” indica marca parcial (solo entrada o solo salida) en el día.
+  Las faltas justificadas se determinan por los rangos cargados en <em>justificantes</em>.
+</p>
 
-  <table>
-    <thead>
-      <tr>
-        <th class="nowrap">Enlace</th>
-        <th>Empleado</th>
-        <th>Unidad</th>
-        <th>Turno</th>
-        <th>Horario</th>
-        <th class="mono nowrap">1ª Entrada</th>
-        <th class="mono nowrap">Últ. Salida</th>
-        <th class="mono">Días</th>
-        <th class="mono">Asist.</th>
-        <th class="mono">Retardos</th>
-        <th class="mono">Incompl.</th>
-        <th class="mono">Faltas</th>
-        <th class="mono">Justif.</th>
-      </tr>
-    </thead>
-    <tbody>
-      <?php foreach ($summary as $s): ?>
-      <tr>
-        <td class="mono nowrap"><?= (int)$s['id'] ?></td>
-        <td><?= htmlspecialchars(trim($s['nombre'].' '.$s['apellido'])) ?></td>
-        <td><?= htmlspecialchars($s['unidad_medica']) ?></td>
-        <td><?= htmlspecialchars($s['turno']) ?></td>
-        <td class="mono nowrap"><?= htmlspecialchars($s['horario']) ?></td>
-        <td class="mono nowrap"><?= htmlspecialchars($s['first_in']) ?></td>
-        <td class="mono nowrap"><?= htmlspecialchars($s['last_out']) ?></td>
-        <td class="mono" style="text-align:right"><?= (int)$s['dias'] ?></td>
-        <td class="mono" style="text-align:right"><?= (int)$s['asistencias'] ?></td>
-        <td class="mono" style="text-align:right"><?= (int)$s['retardos'] ?></td>
-        <td class="mono" style="text-align:right"><?= (int)$s['incompletas'] ?></td>
-        <td class="mono" style="text-align:right"><?= (int)$s['faltas'] ?></td>
-        <td class="mono" style="text-align:right"><?= (int)$s['justificadas'] ?></td>
-      </tr>
-      <?php endforeach; ?>
-    </tbody>
-  </table>
-
-  <p class="muted" style="margin-top:10px">
-    Nota: “Incompleta” indica marca parcial (solo entrada o solo salida) en el día.
-    Las faltas justificadas se determinan por los rangos cargados en <em>justificantes</em>.
-  </p>
-
-  </body>
-  </html>
-  <?php
-  $html = ob_get_clean();
+</body>
+</html>
+<?php
+$html = ob_get_clean();
 
   $dompdf = new Dompdf\Dompdf([
     'isRemoteEnabled' => true,
     'defaultFont' => 'DejaVu Sans',
   ]);
   $dompdf->loadHtml($html, 'UTF-8');
-  $dompdf->setPaper('A4', 'portrait');
+  $dompdf->setPaper('A4', 'landscape');
   $dompdf->render();
 
   // Guardar archivo
