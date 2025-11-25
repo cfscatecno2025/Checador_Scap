@@ -25,44 +25,125 @@ $DEFAULT_AVATAR = dirname($_SERVER['SCRIPT_NAME'], 2) . '/assets/profiles-img/pe
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-      :root{
-          /* imagen de fondo (opcional) */
-      --bg-image: url('/Checador_Scap/assets/img/logo_login_scap.jpg');
-      --bg-size: clamp(260px, 32vw, 520px); /* controla tamaño del fondo */
-      }
-    body{background:#fff} .container{max-width:1100px}
-    .sheet-back{position:fixed;inset:0;display:none;z-index:1065;background:#fff}
-    .sheet{width:min(920px,96vw);max-height:calc(100dvh - 40px);margin:auto;background:#fff;border-radius:14px;display:flex;flex-direction:column}
-    .sheet-h{padding:14px 16px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between}
-    .sheet-c{padding:16px;overflow:auto}
-    .sheet .x{position:absolute;right:14px;top:8px;font-size:24px;cursor:pointer}
-    .row-actions{display:flex;gap:8px;flex-wrap:wrap}
-    .pill{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid #e5e7eb}
-    .day-row{display:grid;grid-template-columns:110px 1fr 1fr 140px 90px;gap:8px;align-items:center;margin-bottom:8px}
-    .hr{height:1px;background:#e5e7eb;margin:14px 0}
-    
-     /* Fondo centrado, no ocupa toda la pantalla */
-    body::before{
-      content:"";
-      position:fixed; inset:0; z-index:-1;
-      background-image: var(--bg-image);
-      background-repeat:no-repeat;
-      background-position:center center;
-      background-size: var(--bg-size) auto;
-      background-attachment:fixed;
-      pointer-events:none;
-    }
+  :root{
+    --bg:#f6f8fb;
+    --card:#ffffff;
+    --text:#0f172a;
+    --muted:#64748b;
+    --bd:#e5e7eb;
+    --primary:#2563eb;
+    --primary-700:#1d4ed8;
+    --shadow:0 2px 12px rgba(15,23,42,.06);
+    --shadow-lg:0 16px 40px rgba(2,6,23,.18);
 
-    /* Foto */
-    .avatar-preview{width:56px;height:56px;border-radius:999px;object-fit:cover;border:3px solid #e5e7eb;background:#f8fafc}
-    .tbl-avatar{width:40px;height:40px;border-radius:999px;object-fit:cover;border:2px solid #e5e7eb;background:#f8fafc}
+    /* fondo (se mantiene como en tus otras vistas) */
+    --bg-image:url('/Checador_Scap/assets/img/logo_isstech.png');
+    --bg-size:clamp(420px, 52vw, 420px);
+  }
 
-    /* Modal de huella tipo kiosko */
-    .fp-ico{width:180px;height:180px;margin:10px auto 6px;display:block}
-    .fp-modal-msg{min-height:22px;font-weight:600}
-    .fp-modal-msg.error{color:#dc2626}
-    .fp-modal-msg.ok{color:#16a34a}
-  </style>
+  /* Fondo con logo tenue SIEMPRE visible */
+  body{
+    background:var(--bg);
+    color:var(--text);
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0; z-index:-1;
+    background-image:var(--bg-image);
+    background-repeat:no-repeat;
+    background-position:center center;
+    background-size:var(--bg-size) auto;
+    opacity:var(--bg-opacity);
+    pointer-events:none;
+  }
+
+  .container{max-width:1200px}
+  h1{font-size:clamp(1.25rem, .9rem + 1.5vw, 1.6rem); margin-bottom:.75rem}
+
+  /* Tarjeta/controles */
+  .card-soft{border-radius:14px; background:var(--card); box-shadow:var(--shadow)}
+  .badge.text-bg-light{background:#eef2ff !important; color:#1e293b !important; border:1px solid #e2e8f0}
+
+  /* Inputs coherentes (2px) */
+  .form-control,.form-select{
+    border:2px solid #cbd5e1; border-radius:10px; background:#fff;
+    transition:border-color .18s, box-shadow .18s;
+  }
+  .form-control:focus,.form-select:focus{
+    border-color:var(--primary); box-shadow:0 0 0 .2rem rgba(37,99,235,.15); outline:none;
+  }
+
+  /* Botones */
+  .btn-primary{background:var(--primary); border-color:var(--primary)}
+  .btn-primary:hover{background:var(--primary-700); border-color:var(--primary-700)}
+  .btn-ghost{background:#fff;color:var(--text);border:1px solid #cbd5e1}
+  .btn-ghost:hover{background:#f1f5f9}
+
+  /* Tabla */
+  .table-responsive{border-radius:14px; box-shadow:var(--shadow)}
+  .table{--bs-table-bg:#fff}
+  .table thead th{
+    position:sticky; top:0; z-index:2;
+    background:#f8fafc; border-bottom:1px solid var(--bd);
+  }
+  .table tbody tr:hover{background:#f8fafc}
+  .table td,.table th{vertical-align:middle; padding:.75rem .85rem}
+  /* Evita recortes visuales en columnas cortas y mejora lectura */
+  .table td:nth-child(1),
+  .table td:nth-child(4),
+  .table td:nth-child(5),
+  .table td:nth-child(6){white-space:nowrap}
+
+  /* Avatares */
+  .avatar-preview{width:56px;height:56px;border-radius:999px;object-fit:cover;border:3px solid #e5e7eb;background:#f8fafc}
+  .tbl-avatar{width:40px;height:40px;border-radius:999px;object-fit:cover;border:2px solid #e5e7eb;background:#f8fafc}
+
+  /* Acciones de fila */
+  .row-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+  .row-actions .btn{border-radius:10px}
+
+  /* Separadores */
+  .hr{height:1px;background:#e5e7eb;margin:14px 0}
+
+  /* Modal tipo “sheet” (sin tocar tu JS) */
+  .sheet-back{
+    position:fixed; inset:0; display:none; z-index:1065;
+    background:rgba(2,6,23,.45); backdrop-filter:blur(3px);
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .sheet{
+    width:min(940px,96vw);
+    max-height:calc(100dvh - 40px);
+    margin:auto; background:#fff; border-radius:16px;
+    display:flex; flex-direction:column;
+    border:1px solid var(--bd); box-shadow:var(--shadow-lg);
+    animation:pop .18s ease-out;
+  }
+  .sheet-h{
+    padding:14px 16px; border-bottom:1px solid var(--bd);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .sheet-c{padding:16px; overflow:auto}
+  .sheet .x{position:absolute; right:14px; top:8px; font-size:24px; cursor:pointer}
+
+  @keyframes pop { from{ transform:translateY(6px); opacity:0 } to{ transform:translateY(0); opacity:1 } }
+
+  /* Grid del horario (sin tocar IDs) */
+  .day-row{
+    display:grid; grid-template-columns:110px 1fr 1fr 140px 90px;
+    gap:8px; align-items:center; margin-bottom:8px;
+  }
+  .pill{display:inline-block; padding:4px 10px; border-radius:999px; border:1px solid var(--bd); background:#f8fafc; color:#334155}
+
+  /* Fingerprint modal */
+  .fp-ico{width:180px;height:180px;margin:10px auto 6px;display:block}
+  .fp-modal-msg{min-height:22px;font-weight:600}
+  .fp-modal-msg.error{color:#dc2626}
+  .fp-modal-msg.ok{color:#16a34a}
+
+  /* Toasts por encima del sheet */
+  .toast-container{z-index:1086}
+</style>
 </head>
 <body>
 <?php if (file_exists($NAVBAR)) include $NAVBAR; ?>
@@ -70,17 +151,19 @@ $DEFAULT_AVATAR = dirname($_SERVER['SCRIPT_NAME'], 2) . '/assets/profiles-img/pe
 <div class="toast-container position-fixed top-0 end-0 p-3" id="toastArea" style="z-index:1086"></div>
 
 <div class="container my-4">
+    <div class="card card-soft-p-3 mb-3">
   <h1>Gestión de empleados</h1>
 
   <div class="d-flex gap-2 flex-wrap align-items-center mb-3">
     <button class="btn btn-primary" id="btnAdd">Agregar empleado</button>
     <div class="d-flex gap-2 flex-grow-1" style="min-width:260px;">
         <input class="form-control" style="background: #f6f8fb" id="q" placeholder="Buscar por nombre o enlace…">
-      <button class="btn btn-outline-secondary" id="btnSearch">Buscar</button>
-      <button class="btn btn-outline-secondary" id="btnClear">Limpiar</button>
+      <button class="btn btn-ghost" id="btnSearch">Buscar</button>
+      <button class="btn btn-ghost" id="btnClear">Limpiar</button>
     </div>
     <span class="badge text-bg-light" id="totalTag">Total: 0</span>
   </div>
+ </div>
 
   <div class="table-responsive border rounded bg-white">
     <table class="table align-middle mb-0">
@@ -499,7 +582,7 @@ async function fpFetch(path, opts={}) {
 }
 async function fpOpen(){ try{ await fpFetch("api/device/open"); }catch{} }
 
-/* ===== Modal de huella ===== */
+/* ===== Modal de huella dactilar ===== */
 const $fpBack  = document.getElementById('fpBack');
 const $fpClose = document.getElementById('fpClose');
 const $fpModalMsg = document.getElementById('fpModalMsg');
@@ -533,7 +616,7 @@ document.getElementById('btnOpenFP').addEventListener('click', openFpModal);
 $fpClose.addEventListener('click', closeFpModal);
 document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeFpModal(); });
 
-/* Capturar (enroll) */
+/* Capturar huella (enroll) */
 document.getElementById('btnModalEnroll').addEventListener('click', async ()=>{
   try{
     await fpOpen();
@@ -604,7 +687,7 @@ document.getElementById('btnModalClear').addEventListener('click', async ()=>{
   }
 });
 
-/* ====== Upload de foto ====== */
+/* ====== Upload (carga de foto de perfil) ====== */
 const $btnUploadFoto = document.getElementById('btnUploadFoto');
 const $fileFoto = document.getElementById('fileFoto');
 const $fotoPreview = document.getElementById('fotoPreview');

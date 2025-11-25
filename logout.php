@@ -20,5 +20,5 @@ if (ini_get("session.use_cookies")) {
 session_destroy();
 
 // redirigir al login
-header('Location: /Checador_Scap/index.php');
+header('Location: /Checador_Scap/acceso/empleados.php');
 exit;

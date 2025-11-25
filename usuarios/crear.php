@@ -29,138 +29,134 @@ $NAVBAR = $ROOT . '/components/navbar.php';
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <style>
-    /* ============================
-       TEMA CLARO + BORDES MARCADOS
-       ============================ */
-    :root{
-      --bg:#f6f8fb;
-      --card:#ffffff;
-      --text:#0f172a;
-      --muted:#64748b;
-      --bd:#cbd5e1;               /* borde base */
-      --bd-strong:#94a3b8;        /* borde más notorio */
+  :root{
+    --bg:#f6f8fb;
+    --card:#ffffff;
+    --text:#0f172a;
+    --muted:#64748b;
+    --bd:#e5e7eb;
+    --primary:#2563eb;
+    --primary-700:#1d4ed8;
+    --shadow:0 2px 12px rgba(15,23,42,.06);
+    --shadow-lg:0 16px 40px rgba(2,6,23,.18);
 
-      --input:#ffffff;
-      --chip:#f1f5f9;
-      --chipbd:#e2e8f0;
+    /* Fondo corporativo (SIEMPRE visible) */
+    --bg-image:url('/Checador_Scap/assets/img/logo_isstech.png');
+    --bg-size:clamp(420px, 52vw, 420px);
+  }
 
-      --primary:#2563eb;
-      --primary-700:#1d4ed8;
-      --danger:#dc2626;
-      --success:#16a34a;
+  /* ===== Fondo y tipografía coherente ===== */
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0; z-index:-1;
+    background-image:var(--bg-image);
+    background-repeat:no-repeat;
+    background-position:center center;
+    background-size:var(--bg-size) auto;
+    opacity:var(--bg-opacity);
+    pointer-events:none;
+  }
 
-      /* imagen de fondo (opcional) */
-      --bg-image: url('/Checador_Scap/assets/img/logo_login_scap.jpg');
-      --bg-size: clamp(260px, 32vw, 520px); /* controla tamaño del fondo */
-    }
+  .container{max-width:1200px}
+  h1{font-size:clamp(1.25rem,.9rem + 1.5vw,1.6rem); margin:10px 0 16px}
 
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-      background:var(--bg);
-      color:var(--text);
-    }
-    /* Fondo centrado, no ocupa toda la pantalla */
-    body::before{
-      content:"";
-      position:fixed; inset:0; z-index:-1;
-      background-image: var(--bg-image);
-      background-repeat:no-repeat;
-      background-position:center center;
-      background-size: var(--bg-size) auto;
-      background-attachment:fixed;
-      pointer-events:none;
-    }
+  /* ===== Barra de acciones / chips ===== */
+  .actions-bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  .tag{
+    display:inline-flex;gap:6px;align-items:center;
+    background:#eef2ff;border:1px solid #e2e8f0;color:#1e293b;
+    font-size:12px;padding:4px 10px;border-radius:999px
+  }
 
-    .container{max-width:1100px;margin:24px auto;padding:0 16px}
-    h1{margin:6px 0 18px;font-size:28px}
+  /* ===== Botones coherentes ===== */
+  .btn{border-radius:10px; font-weight:700}
+  .btn-primary{background:var(--primary);border-color:var(--primary)}
+  .btn-primary:hover{background:var(--primary-700);border-color:var(--primary-700)}
+  .btn-ghost{background:#fff;color:var(--text);border:1px solid #cbd5e1}
+  .btn-ghost:hover{background:#f1f5f9}
+  .btn-danger{border-color:#dc2626}
 
-    .actions-bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  /* ===== Inputs (borde 2px + halo) ===== */
+  .input,.form-control,.form-select{
+    background:#fff;border:2px solid #cbd5e1;border-radius:10px;
+    padding:10px 12px; outline:none;
+    transition:border-color .18s, box-shadow .18s;
+  }
+  .input:focus,.form-control:focus,.form-select:focus{
+    border-color:var(--primary);
+    box-shadow:0 0 0 .2rem rgba(37,99,235,.15);
+  }
+  .input::placeholder{color:var(--muted)}
 
-    .btn{border:1px solid var(--bd-strong); border-radius:10px; padding:10px 14px; font-weight:700; cursor:pointer}
-    .btn-primary{background:var(--primary);color:#fff;border-color:transparent}
-    .btn-primary:hover{background:var(--primary-700)}
-    .btn-light{background:#f8fafc;color:#0f172a;border:1px solid var(--bd-strong)}
-    .btn-danger{background:var(--danger);color:#fff;border-color:transparent}
-    .btn-ghost{background:#fff;color:var(--text);border:1px solid var(--bd-strong)}
+  /* ===== Tabla “soft” con header fijo ===== */
+  .table-wrap{
+    overflow:auto; border-radius:14px; background:var(--card);
+    border:1px solid var(--bd); box-shadow:var(--shadow);
+  }
+  table{width:100%; border-collapse:collapse; min-width:760px}
+  th,td{padding:.75rem .9rem; border-bottom:1px solid var(--bd); vertical-align:middle; text-align:left}
+  thead th{
+    position:sticky; top:0; z-index:2;
+    background:#f8fafc; border-bottom:1px solid var(--bd);
+  }
+  tbody tr:hover{background:#f8fafc}
+  /* columnas estrechas sin cortes feos */
+  tbody td:nth-child(1), tbody td:nth-child(3), tbody td:nth-child(4){white-space:nowrap}
 
-    .input{
-      background:var(--input);
-      border:2px solid var(--bd-strong);  /* borde notorio */
-      color:var(--text);
-      border-radius:10px;
-      padding:10px 12px;
-      outline:none;
-      transition: box-shadow .15s ease, border-color .15s ease;
-      box-shadow: 0 0 0 3px rgba(37,99,235,0); /* halo neutro */
-    }
-    .input:focus{
-      border-color:var(--primary);
-      box-shadow: 0 0 0 3px rgba(37,99,235,.18); /* halo de enfoque */
-    }
-    .input::placeholder{color:var(--muted)}
+  .row-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+  .pill{
+    display:inline-block;padding:2px 10px;border-radius:999px;
+    border:1px solid #cbd5e1;background:#fff;color:#0f172a;font-size:12px
+  }
 
-    .table-wrap{overflow:auto;border:2px solid var(--bd-strong);border-radius:14px;background:var(--card)}
-    table{width:100%;border-collapse:collapse;min-width:760px}
-    th,td{padding:12px;border-bottom:1px solid var(--bd);text-align:left;vertical-align:middle}
-    thead th{background:#f8fafc;position:sticky;top:0;z-index:1;color:#0f172a;border-bottom:2px solid var(--bd-strong)}
+  /* ===== Paginación ===== */
+  .pager{display:flex;gap:6px;align-items:center;justify-content:center;margin-top:14px;flex-wrap:wrap}
+  .page-btn{
+    border:1px solid #cbd5e1; background:#fff; color:#0f172a;
+    padding:8px 12px; border-radius:10px; cursor:pointer
+  }
+  .page-btn[aria-current="true"]{background:var(--primary);color:#fff;border-color:transparent}
+  .ellipsis{color:var(--muted); padding:0 4px}
 
-    .tag{
-      display:inline-flex;gap:6px;align-items:center;
-      background:var(--chip);border:1px solid var(--chipbd);color:var(--muted);
-      font-size:12px;padding:3px 8px;border-radius:999px
-    }
-    .row-actions{display:flex;gap:6px;flex-wrap:wrap}
-    .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--bd-strong);background:#fff;color:#0f172a}
+  /* ===== Modal tipo “sheet” coherente ===== */
+  .sheet-back{
+    position:fixed; inset:0; display:none; z-index:1065;
+    background:rgba(2,6,23,.45); backdrop-filter:blur(3px);
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .sheet{
+    width:min(820px,96vw); max-height:calc(100dvh - 40px);
+    background:#fff; border:1px solid var(--bd); border-radius:16px;
+    box-shadow:var(--shadow-lg); display:flex; flex-direction:column; overflow:hidden;
+    animation:pop .18s ease-out;
+  }
+  .sheet-h{
+    padding:14px 16px; display:flex; justify-content:space-between; align-items:center;
+    border-bottom:1px solid var(--bd); background:#ffffffa8; backdrop-filter:blur(2px) saturate(1.1);
+  }
+  .sheet-c{padding:16px; overflow:auto}
+  @keyframes pop{from{transform:translateY(6px);opacity:0}to{transform:translateY(0);opacity:1}}
 
-    .pager{display:flex;gap:6px;align-items:center;justify-content:center;margin-top:14px;flex-wrap:wrap}
-    .page-btn{
-      border:1px solid var(--bd-strong);
-      background:#ffffff;
-      color:#0f172a;
-      padding:8px 12px;border-radius:10px;cursor:pointer
-    }
-    .page-btn[aria-current="true"]{background:var(--primary);color:#fff;border-color:transparent}
-    .ellipsis{color:var(--muted);padding:0 4px}
+  /* ===== Modal Bootstrap (confirm) al tema ===== */
+  #confirmModal .modal-content{
+    background:#fff !important; color:var(--text) !important;
+    border:1px solid var(--bd) !important; border-radius:14px;
+    box-shadow:var(--shadow-lg);
+  }
+  #confirmModal .modal-header,#confirmModal .modal-footer{border-color:var(--bd) !important}
+  #confirmModal .btn-outline-light{color:var(--text) !important; border-color:#cbd5e1 !important; background:#fff !important}
+  #confirmModal .btn-outline-light:hover{background:#f1f5f9 !important}
 
-    /* ===== Panel modal propio ===== */
-    .sheet-back{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;padding:16px;z-index:1065}
-    .sheet{width:100%;max-width:820px;background:var(--card);border:2px solid var(--bd-strong);border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(15,23,42,.25)}
-    .sheet-h{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:2px solid var(--bd-strong);background:#ffffffa8;backdrop-filter:saturate(1.2) blur(2px)}
-    .sheet-c{padding:16px;background:#fff}
-
-    .grid{display:grid;gap:12px}
-    @media (min-width:760px){ .grid-2{grid-template-columns:1fr 1fr} .grid-3{grid-template-columns:1fr 1fr 1fr} }
-    label{font-weight:600;margin-bottom:6px;display:block}
-    .help{color:var(--muted);font-size:12px}
-
-    .hr{height:1px;background:var(--bd);margin:14px 0}
-    .right{display:flex;gap:8px;justify-content:flex-end}
-    .muted{color:var(--muted)}
-
-    /* ===== Modal Bootstrap confirmación (tema claro) ===== */
-    #confirmModal .modal-content{
-      background:var(--card) !important;
-      color:var(--text) !important;
-      border:2px solid var(--bd-strong) !important;
-    }
-    #confirmModal .modal-header,
-    #confirmModal .modal-footer{ border-color:var(--bd-strong) !important; }
-    #confirmModal .btn-outline-light{
-      color:var(--text) !important;
-      border-color:var(--bd-strong) !important;
-      background:#fff !important;
-    }
-    #confirmModal .btn-outline-light:hover{
-      background:#f1f5f9 !important;
-    }
-
-    .toast-container .toast{
-      border-radius:12px;
-      box-shadow:0 10px 30px rgba(15,23,42,.2);
-    }
-  </style>
+  /* ===== Toasts encima de todo ===== */
+  .toast-container .toast{border-radius:12px; box-shadow:0 10px 30px rgba(15,23,42,.2)}
+</style>
 </head>
 
 <body>
@@ -169,7 +165,8 @@ $NAVBAR = $ROOT . '/components/navbar.php';
 <!-- Contenedor global de toasts -->
 <div class="toast-container position-fixed top-0 end-0 p-3" id="toastArea" style="z-index:1086"></div>
 
-<div class="container">
+<div class="container my-4">
+ <div class="card card-soft-p-3 mb-3">
   <h1>Gestión de usuarios</h1>
 
   <div class="actions-bar">
@@ -181,6 +178,7 @@ $NAVBAR = $ROOT . '/components/navbar.php';
     </div>
     <span class="tag" id="totalTag">Total: 0</span>
   </div>
+ </div>
 
   <div class="table-wrap">
     <table>

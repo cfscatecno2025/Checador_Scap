@@ -21,7 +21,41 @@ $NAVBAR = $ROOT . '/components/navbar.php';
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body{background:#f6f8fb}
+    :root{
+      --bg:#f6f8fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --bd:#e5e7eb;
+      --primary:#2563eb;
+      --primary-700:#1d4ed8;
+      --shadow:0 2px 12px rgba(15,23,42,.06);
+      --shadow-lg:0 16px 40px rgba(2,6,23,.18);
+
+      /* Fondo corporativo (SIEMPRE visible) */
+      --bg-image:url('/Checador_Scap/assets/img/logo_isstech.png');
+      --bg-size:clamp(420px, 52vw, 420px);
+    }
+
+    /* ===== Fondo y tipografía coherente ===== */
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+    body::before{
+      content:"";
+      position:fixed; inset:0; z-index:-1;
+      background-image:var(--bg-image);
+      background-repeat:no-repeat;
+      background-position:center center;
+      background-size:var(--bg-size) auto;
+      opacity:var(--bg-opacity);
+      pointer-events:none;
+    }
+
     .container{max-width:1200px}
     .card-soft{border-radius:14px; box-shadow:0 2px 12px rgba(15,23,42,.06)}
     .table thead th{position:sticky; top:0; background:#fff; z-index:1}
@@ -40,7 +74,7 @@ $NAVBAR = $ROOT . '/components/navbar.php';
   <!-- Filtros / Generación -->
   <div class="card card-soft p-3 mb-3">
     <div class="row g-2 align-items-end">
-        <h3 class="mb-3">Gestión de reportes</h3>
+      <h3 class="mb-3">Gestión de reportes</h3>
       <div class="col-md-3">
         <label class="form-label">Tipo de reporte</label>
         <select class="form-select" id="r_tipo">
@@ -81,16 +115,17 @@ $NAVBAR = $ROOT . '/components/navbar.php';
           <tr>
             <th>Tipo de reporte</th>
             <th>Rango del reporte</th>
-            <th>Generado por</th>
             <th style="width:180px">Creado</th>
             <th style="width:120px">Acciones</th>
           </tr>
         </thead>
         <tbody id="tbody">
-          <tr><td colspan="6" class="text-muted text-center py-3">Sin reportes aún.</td></tr>
+          <tr><td colspan="4" class="text-muted text-center py-3">Sin reportes aún.</td></tr>
         </tbody>
       </table>
     </div>
+
+    <!-- Paginación -->
     <div class="d-flex gap-2 justify-content-center mt-3 flex-wrap" id="pager"></div>
   </div>
 </div>
@@ -132,48 +167,62 @@ function toast(msg, kind='success'){
   area.appendChild(el); new bootstrap.Toast(el, {delay:2600}).show();
 }
 
-let state = {page:1, pages:1, limit:10};
+/* ===== Estado de paginación ===== */
+let state = { page: 1, pages: 1, limit: 5 };
 
+/* ===== Render de paginación (igual estilo que empleados) ===== */
 function renderPager(){
   const p = state.page, P = state.pages;
-  if(P<=1){ $pager.innerHTML=''; return; }
-  const btn = (i, label=i, cur=false)=> `<button class="btn btn-sm ${cur?'btn-primary':'btn-outline-secondary'}" data-page="${i}">${label}</button>`;
+  if (P <= 1){ $pager.innerHTML = ''; return; }
+
+  const btn = (i, label=i, cur=false) =>
+    `<button class="btn btn-sm ${cur?'btn-primary':'btn-outline-secondary'}" data-page="${i}">${label}</button>`;
+
   const parts = [];
   parts.push(btn(1,1,p===1));
-  if(p>3) parts.push('<span class="mx-1">…</span>');
-  for(let i=Math.max(2,p-1); i<=Math.min(P-1,p+1); i++) parts.push(btn(i,i,p===i));
-  if(p<P-2) parts.push('<span class="mx-1">…</span>');
-  if(P>1) parts.push(btn(P,P,p===P));
+  if (p > 3) parts.push('<span class="mx-1">…</span>');
+  for (let i = Math.max(2,p-1); i <= Math.min(P-1,p+1); i++) parts.push(btn(i,i,p===i));
+  if (p < P-2) parts.push('<span class="mx-1">…</span>');
+  if (P > 1) parts.push(btn(P,P,p===P));
   $pager.innerHTML = parts.join('');
 }
+
+/* ===== Click en paginación ===== */
 $pager.addEventListener('click', (e)=>{
   const b = e.target.closest('button[data-page]'); if(!b) return;
   load(+b.dataset.page);
 });
 
+/* ===== Cargar listado con page/limit ===== */
 async function load(page=1){
   state.page = page;
-  const params = new URLSearchParams({action:'list', page:state.page, limit:state.limit});
-  $tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">Cargando…</td></tr>`;
+  const params = new URLSearchParams({
+    action: 'list',
+    page: state.page,
+    limit: state.limit
+  });
+  $tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">Cargando…</td></tr>`;
   try{
     const r = await fetch(`${API}?${params}`, {headers:{'X-CSRF':CSRF}});
     const j = await r.json();
-    if(!j.ok){ $tbody.innerHTML = `<tr><td colspan="6" class="text-danger">${j.msg||'Error'}</td></tr>`; return; }
-    $total.textContent = j.total ?? 0;
-    state.pages = j.pages ?? 1; renderPager();
-
-    if((j.rows||[]).length===0){
-      $tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">Sin reportes</td></tr>`;
+    if(!j.ok){
+      $tbody.innerHTML = `<tr><td colspan="4" class="text-danger">${j.msg||'Error'}</td></tr>`;
       return;
     }
+
+    $total.textContent = j.total ?? 0;
+    state.pages = j.pages ?? 1;
+    renderPager();
+
+    if((j.rows||[]).length===0){
+      $tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">Sin reportes</td></tr>`;
+      return;
+    }
+
     $tbody.innerHTML = j.rows.map(r => `
       <tr>
         <td class="text-capitalize">${r.tipo_reporte||'—'}</td>
         <td class="mono">${r.fecha_inicio} — ${r.fecha_fin}</td>
-        <td>
-          <div class="fw-semibold">${(r.nombre||'')+' '+(r.apellido||'')}</div>
-          <div class="text-muted small">Enlace ${r.enlace||r.generado_por}</div>
-        </td>
         <td class="mono">${r.fecha_generacion||'—'}</td>
         <td>
           <button class="btn btn-sm btn-outline-secondary" data-act="view" data-id="${r.id_reporte}">Ver</button>
@@ -181,10 +230,11 @@ async function load(page=1){
       </tr>
     `).join('');
   }catch(_){
-    $tbody.innerHTML = `<tr><td colspan="6" class="text-danger">Error de red</td></tr>`;
+    $tbody.innerHTML = `<tr><td colspan="4" class="text-danger">Error de red</td></tr>`;
   }
 }
 
+/* ===== Ver PDF en modal ===== */
 document.addEventListener('click', (e)=>{
   const b = e.target.closest('button[data-act="view"]'); if(!b) return;
   const id = +b.dataset.id;
@@ -194,6 +244,7 @@ document.addEventListener('click', (e)=>{
   new bootstrap.Modal(document.getElementById('mdlView')).show();
 });
 
+/* ===== Generar reporte ===== */
 document.getElementById('btnGen').addEventListener('click', async ()=>{
   const tipo = document.getElementById('r_tipo').value;
   const start = document.getElementById('r_start').value;
@@ -202,16 +253,18 @@ document.getElementById('btnGen').addEventListener('click', async ()=>{
 
   if(!start || !end){ toast('Selecciona el rango de fechas','info'); return; }
   const payload = { csrf: CSRF, tipo_reporte: tipo, start, end, enlace: emp||null };
+
   try{
     const r = await fetch(API + '?action=generate', {
-  method:'POST', headers:{'Content-Type':'application/json','X-CSRF':CSRF},
-  body: JSON.stringify(payload)
-});
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRF':CSRF},
+      body: JSON.stringify(payload)
+    });
     const j = await r.json();
     if(!j.ok){ toast(j.msg||'No se pudo generar el reporte','error'); return; }
     toast('Reporte generado');
     load(1);
-    // Abre visor directamente:
+    // Abrir visor directamente:
     setTimeout(()=>{
       const url = `${API}?action=pdf&id=${j.id_reporte}`;
       document.getElementById('pdfFrame').src = url;
@@ -221,10 +274,12 @@ document.getElementById('btnGen').addEventListener('click', async ()=>{
   }catch(_){ toast('Error de red','error'); }
 });
 
+/* ===== Rango automático por tipo ===== */
 document.getElementById('btnAuto').addEventListener('click', ()=>{
   const tipo = document.getElementById('r_tipo').value;
   const today = new Date();
   let s, e;
+
   if (tipo==='diario'){
     s = e = today.toISOString().slice(0,10);
   } else if (tipo==='semanal'){
@@ -253,7 +308,7 @@ document.getElementById('btnAuto').addEventListener('click', ()=>{
   document.getElementById('r_end').value = e;
 });
 
-// Init
+/* Init */
 load(1);
 </script>
 </body>

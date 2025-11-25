@@ -12,7 +12,7 @@ require_once $ROOT . '/scripts/ensure_daily_close.php';
     </a>
     <!-- LOGO 2-->
     <a class="nav__logo" href="/Checador_Scap/vistas-roles/vista-admin.php">
-      <img src="/Checador_Scap/assets/img/logo_navbar.webp" alt="logo isstech" height="28">
+      <img src="/Checador_Scap/assets/img/logo_isstech.png" alt="logo isstech" height="28">
       ISSTECH
     </a>
 

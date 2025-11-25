@@ -21,7 +21,40 @@ $NAVBAR = $ROOT . '/components/navbar.php';
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body{background:#f6f8fb}
+    :root{
+    --bg:#f6f8fb;
+    --card:#ffffff;
+    --text:#0f172a;
+    --muted:#64748b;
+    --bd:#e5e7eb;
+    --primary:#2563eb;
+    --primary-700:#1d4ed8;
+    --shadow:0 2px 12px rgba(15,23,42,.06);
+    --shadow-lg:0 16px 40px rgba(2,6,23,.18);
+
+    /* Fondo corporativo (SIEMPRE visible) */
+    --bg-image:url('/Checador_Scap/assets/img/logo_isstech.png');
+    --bg-size:clamp(420px, 52vw, 420px);
+  }
+
+  /* ===== Fondo y tipografía coherente ===== */
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0; z-index:-1;
+    background-image:var(--bg-image);
+    background-repeat:no-repeat;
+    background-position:center center;
+    background-size:var(--bg-size) auto;
+    opacity:var(--bg-opacity);
+    pointer-events:none;
+  }
     .container{max-width:1200px}
     .card-soft{border-radius:14px; box-shadow:0 2px 12px rgba(15,23,42,.06)}
     .badge-pill{border-radius:999px}

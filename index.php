@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['empleado'] = (int)$row['id_empleado'];
         $_SESSION['usuario']  = $row['clave_acceso'];
 
-        // ===== Normalización de roles que vienen de la BD Agregar mas si se requiere =====
+        // ===== Normalización de roles =====
         $rolBD   = $row['rol'] ?? '';
         $rolNorm = strtolower(trim($rolBD));
         $map = [
@@ -66,7 +66,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $NAVBAR = $ROOT . '/components/navbar.php';
 ?>
-
 <?php if (file_exists($NAVBAR)) include $NAVBAR; ?>
 <!doctype html>
 <html lang="es">
@@ -74,127 +73,137 @@ $NAVBAR = $ROOT . '/components/navbar.php';
   <meta charset="utf-8">
   <title>Login</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <style>
-    /* ===== Paleta clara (consistente con crear.php) ===== */
     :root{
       --bg:#fff;
-      --card:#ffffff;
       --text:#0f172a;
       --muted:#64748b;
       --bd:#cbd5e1;
       --primary:#2563eb;
       --primary-700:#1d4ed8;
+      --shadow:0 2px 12px rgba(15,23,42,.06);
 
-      --shadow: 0 10px 24px rgba(15,23,42,.08);
-
-      --bg-image: url('/Checador_Scap/assets/img/logo_login_scap.jpg');
-      --bg-size: clamp(520px, 52vw, 720px);
+      /* ruta del fondo (ajusta si cambias la imagen) */
+      --bg-image:url('/Checador_Scap/assets/img/logo_isstech.png');
+      --bg-size:clamp(520px, 52vw, 520px);
     }
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
-      background:var(--bg);
-      color:var(--text);
-      padding:24px;
-    }
-    /* Fondo con logo tenue */
+    body{ background:var(--bg); color:var(--text); }
+
+    /* FONDO SIEMPRE VISIBLE */
     body::before{
       content:"";
       position:fixed;
       inset:0;
       z-index:-1;
-      background-image: var(--bg-image);
-      background-repeat: no-repeat;
-      background-position: center center;
-      background-size: var(--bg-size) auto;
-      background-attachment: fixed;
-      
+      background-image:var(--bg-image);
+      background-repeat:no-repeat;
+      background-position:center center;
+      background-size:var(--bg-size) auto;
+      opacity:var(--bg-opacity);
       pointer-events:none;
     }
 
-    .nombre-pagina{margin:0 0 6px;font-size:32px;line-height:1.2; text-align: center;}
-    .descripcion-pagina{margin:0 0 18px;color:#475569; text-align: center;}
-    .formulario{max-width:520px;}
-    .campo{margin-bottom:12px;}
-    label{display:block;font-weight:600;margin-bottom:6px}
-    input[type=text],input[type=password]{
-      width:100%;padding:10px;border:2px solid var(--bd);border-radius:10px;background:#fff;
-      transition:border-color .18s, box-shadow .18s;
-    }
-    input[type=text]:focus, input[type=password]:focus{
+    .card-soft{ border-radius:14px; box-shadow:var(--shadow); background:#fff; }
+    .brand-badge{ display:inline-flex; align-items:center; gap:.75rem; font-weight:700; color:var(--text); }
+    .muted{ color:var(--muted); }
+
+    .form-control{ border-width:2px; border-color:var(--bd); }
+    .form-control:focus{
       border-color:var(--primary);
-      box-shadow:0 0 0 3px rgba(37,99,235,.16);
-      outline:none;
+      box-shadow:0 0 0 .2rem rgba(37,99,235,.15);
     }
-    .boton{
-      padding:12px 16px;border:none;border-radius:10px;background:var(--primary);color:#fff;
-      font-weight:700;cursor:pointer;box-shadow:var(--shadow)
-    }
-    .boton:hover{background:var(--primary-700)}
-    .acciones a{display:inline-block;margin-right:12px;margin-top:8px;color:var(--primary);text-decoration:none}
-    .acciones a:hover{text-decoration:underline}
-    .alert{padding:10px 12px;border-radius:10px;margin:12px 0;background:#fee2e2;border:2px solid #fecaca;color:#991b1b}
-    .row-inline{display:flex;align-items:center;gap:8px}
-    .check{display:flex;align-items:center;gap:8px;user-select:none;color:#475569}
-    .check input{width:16px;height:16px}
+    .btn-primary{ background:var(--primary); border-color:var(--primary); }
+    .btn-primary:hover{ background:var(--primary-700); border-color:var(--primary-700); }
+
+    .login-wrapper{ min-height:calc(100vh - 64px); } /* aire bajo el navbar */
   </style>
 </head>
 <body>
 
-<h1 class="nombre-pagina">Login</h1>
-<p class="descripcion-pagina">Inicia sesión con tus datos</p>
+<main class="login-wrapper d-flex align-items-center">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-12 col-sm-10 col-md-7 col-lg-5">
+        <div class="card card-soft p-4 p-md-5">
 
-<?php if (!empty($error)): ?>
-  <div class="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
-<?php endif; ?>
+          <!-- Marca / Encabezado -->
+          <div class="text-center mb-3">
+            <div class="brand-badge justify-content-center">
+              <!-- <img src="/Checador_Scap/assets/logos/logo_isstech.png" alt="ISSTECH" height="40"> -->
+              <span>Checador SCAP</span>
+            </div>
+            <div class="muted">Inicia sesión con tus datos</div>
+          </div>
 
-<form class="formulario" method="POST" action="">
-  <div class="campo">
-    <label for="clave_acceso">Clave de acceso (usuario)</label>
-    <input
-      type="text"
-      id="clave_acceso"
-      name="clave_acceso"
-      placeholder="Tu usuario"
-      autocomplete="username"
-      required
-      value="<?= isset($_POST['clave_acceso']) ? htmlspecialchars($_POST['clave_acceso'], ENT_QUOTES, 'UTF-8') : '' ?>"
-    />
+          <!-- Alertas -->
+          <?php if (!empty($error)): ?>
+            <div class="alert alert-danger" role="alert">
+              <?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?>
+            </div>
+          <?php endif; ?>
+
+          <!-- Formulario -->
+          <form method="POST" action="" novalidate>
+            <div class="mb-3">
+              <label for="clave_acceso" class="form-label fw-semibold">Clave de acceso (usuario o enlace)</label>
+              <input
+                type="text"
+                class="form-control"
+                id="clave_acceso"
+                name="clave_acceso"
+                placeholder="Tu usuario"
+                autocomplete="username"
+                required
+                value="<?= isset($_POST['clave_acceso']) ? htmlspecialchars($_POST['clave_acceso'], ENT_QUOTES, 'UTF-8') : '' ?>"
+              >
+            </div>
+
+            <div class="mb-2">
+              <label for="password" class="form-label fw-semibold">Contraseña</label>
+              <div class="input-group">
+                <input
+                  type="password"
+                  class="form-control"
+                  id="password"
+                  name="password"
+                  placeholder="Tu contraseña"
+                  autocomplete="current-password"
+                  minlength="6"
+                  required
+                >
+                <button class="btn btn-outline-secondary" type="button" id="togglePwd">Mostrar</button>
+              </div>
+            </div>
+
+            <div class="d-grid mt-3">
+              <button type="submit" class="btn btn-primary btn-lg">Iniciar sesión</button>
+            </div>
+          </form>
+
+          <div class="text-center mt-3">
+            <a class="link-primary" href="/Checador_Scap/auth/olvide.php">¿Olvidaste tu contraseña?</a>
+          </div>
+
+        </div>
+      </div>
+    </div>
   </div>
+</main>
 
-  <div class="campo">
-    <label for="password">Contraseña</label>
-    <input
-      type="password"
-      id="password"
-      name="password"
-      placeholder="Tu contraseña"
-      autocomplete="current-password"
-      minlength="6"
-      required
-    />
-    <label class="check" for="showPwd">
-      <input type="checkbox" id="showPwd" />
-      Mostrar contraseña
-    </label>
-  </div>
-
-  <input type="submit" class="boton" value="Iniciar Sesión">
-</form>
-
-<div class="acciones">
-  <a href="/Checador_Scap/auth/crear-cuenta.php">¿No tienes una cuenta? Crear una</a>
-  <a href="/Checador_Scap/auth/olvide.php">¿Olvidaste tu contraseña?</a>
-</div>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   const pwd = document.getElementById('password');
-  const chk = document.getElementById('showPwd');
-  chk.addEventListener('change', () => { pwd.type = chk.checked ? 'text' : 'password'; });
+  const btn = document.getElementById('togglePwd');
+  btn.addEventListener('click', () => {
+    const show = pwd.type === 'password';
+    pwd.type = show ? 'text' : 'password';
+    btn.textContent = show ? 'Ocultar' : 'Mostrar';
+  });
 </script>
-
 </body>
 </html>
