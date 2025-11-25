@@ -192,6 +192,74 @@ elseif ($action === 'create' || $action === 'update') {
   }
 }
 
+/* ===================== UPLOAD_FOTO ===================== */
+elseif ($action === 'upload_foto') {
+  // Requiere cabecera X-CSRF (ya validada arriba para métodos != GET)
+
+  if (!isset($_FILES['foto'])) {
+    bad('No se recibió archivo');
+  }
+
+  $err = $_FILES['foto']['error'];
+  if ($err !== UPLOAD_ERR_OK) {
+    $map = [
+      UPLOAD_ERR_INI_SIZE   => 'El archivo excede upload_max_filesize del servidor',
+      UPLOAD_ERR_FORM_SIZE  => 'El archivo excede el tamaño permitido del formulario',
+      UPLOAD_ERR_PARTIAL    => 'Archivo subido parcialmente',
+      UPLOAD_ERR_NO_FILE    => 'No se seleccionó archivo',
+      UPLOAD_ERR_NO_TMP_DIR => 'Falta el directorio temporal en el servidor',
+      UPLOAD_ERR_CANT_WRITE => 'No se pudo escribir el archivo en disco',
+      UPLOAD_ERR_EXTENSION  => 'Extensión de PHP detuvo la carga'
+    ];
+    bad($map[$err] ?? 'Error al subir el archivo');
+  }
+
+  // Límite (coincide con el front: 5 MB)
+  if ($_FILES['foto']['size'] > 5 * 1024 * 1024) {
+    bad('La imagen debe ser ≤ 5 MB');
+  }
+
+  $tmp  = $_FILES['foto']['tmp_name'];
+
+  // Validación de MIME -> extensión
+  $finfo = finfo_open(FILEINFO_MIME_TYPE);
+  $mime  = finfo_file($finfo, $tmp);
+  finfo_close($finfo);
+
+  $allowed = [
+    'image/jpeg' => 'jpg',
+    'image/png'  => 'png',
+    'image/webp' => 'webp',
+    'image/gif'  => 'gif'
+  ];
+  if (!isset($allowed[$mime])) {
+    bad('Tipo de imagen no permitido (usa JPG, PNG, WEBP o GIF)');
+  }
+  $ext = $allowed[$mime];
+
+  // Carpeta de destino dentro del proyecto
+  $destDir = $ROOT . '/assets/profiles-img';
+  if (!is_dir($destDir)) {
+    @mkdir($destDir, 0775, true);
+  }
+
+  // Nombre único
+  $filename = 'perfil_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+  $destPath = $destDir . '/' . $filename;
+
+  if (!move_uploaded_file($tmp, $destPath)) {
+    bad('No se pudo guardar el archivo');
+  }
+  @chmod($destPath, 0644);
+
+  // URL pública (misma base que usas para el DEFAULT_AVATAR)
+  $baseUrl = dirname($_SERVER['SCRIPT_NAME'], 2); // /Checador_Scap
+  $url     = $baseUrl . '/assets/profiles-img/' . $filename;
+
+  ok(['url' => $url]);
+}
+
+
 /* ======================== DELETE ======================== */
 elseif ($action === 'delete') {
   $data = json_decode(file_get_contents('php://input'), true);

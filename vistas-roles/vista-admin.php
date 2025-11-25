@@ -183,6 +183,12 @@ try {
     .hr{height:1px;background:var(--bd-strong);margin:18px 0}
     .icon{width:18px;height:18px;display:inline-block}
   </style>
+  <style>
+  /* Fix: logos juntos a la izquierda, menú a la derecha (solo en Admin) */
+  .nav__inner{ justify-content: flex-start !important; }
+  .nav__logo1{ margin-right: 3px; }
+</style>
+
 </head>
 <body>
 
