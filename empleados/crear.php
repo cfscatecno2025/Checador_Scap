@@ -36,12 +36,12 @@ $DEFAULT_AVATAR = dirname($_SERVER['SCRIPT_NAME'], 2) . '/assets/profiles-img/pe
     --shadow:0 2px 12px rgba(15,23,42,.06);
     --shadow-lg:0 16px 40px rgba(2,6,23,.18);
 
-    /* fondo (se mantiene como en tus otras vistas) */
+    /* fondo */
     --bg-image:url('/Checador_Scap/assets/img/logo_isstech.png');
     --bg-size:clamp(420px, 52vw, 420px);
   }
 
-  /* Fondo con logo tenue SIEMPRE visible */
+  /* Fondo con logo SIEMPRE visible */
   body{
     background:var(--bg);
     color:var(--text);
@@ -105,7 +105,7 @@ $DEFAULT_AVATAR = dirname($_SERVER['SCRIPT_NAME'], 2) . '/assets/profiles-img/pe
   /* Separadores */
   .hr{height:1px;background:#e5e7eb;margin:14px 0}
 
-  /* Modal tipo “sheet” (sin tocar tu JS) */
+  /* Modal tipo “sheet” */
   .sheet-back{
     position:fixed; inset:0; display:none; z-index:1065;
     background:rgba(2,6,23,.45); backdrop-filter:blur(3px);
@@ -128,14 +128,14 @@ $DEFAULT_AVATAR = dirname($_SERVER['SCRIPT_NAME'], 2) . '/assets/profiles-img/pe
 
   @keyframes pop { from{ transform:translateY(6px); opacity:0 } to{ transform:translateY(0); opacity:1 } }
 
-  /* Grid del horario (sin tocar IDs) */
+  /* Grid/ panel del horario */
   .day-row{
     display:grid; grid-template-columns:110px 1fr 1fr 140px 90px;
     gap:8px; align-items:center; margin-bottom:8px;
   }
   .pill{display:inline-block; padding:4px 10px; border-radius:999px; border:1px solid var(--bd); background:#f8fafc; color:#334155}
 
-  /* Fingerprint modal */
+  /* Fingerprint (huella)) modal */
   .fp-ico{width:180px;height:180px;margin:10px auto 6px;display:block}
   .fp-modal-msg{min-height:22px;font-weight:600}
   .fp-modal-msg.error{color:#dc2626}
@@ -422,7 +422,7 @@ function openModal(mode, data){
     setReadOnly(false);
 
   } else if (mode === 'edit'){
-    $title.textContent = `Editar empleado #${data.id_empleado}`;
+    $title.textContent = `Editar empleado: ${data.nombre} ${data.apellido}`;
     $frm.f_id.value = data.id_empleado;
     $frm.f_codigo.value = data.codigo_empleado || '';
     $frm.f_nombre.value = data.nombre || '';
@@ -436,7 +436,7 @@ function openModal(mode, data){
     document.getElementById('f_firma').value = (data.firma||"");
     setFpStatus(data.firma ? 'Huella cargada ✔' : 'Sin huella capturada.');
     setReadOnly(false);
-    $btnDelete.hidden = false;
+    $btnDelete.hidden = true;
 
   } else {
     $title.textContent = `Horario de ${data.nombre} ${data.apellido}`;
@@ -452,7 +452,7 @@ function openModal(mode, data){
     document.getElementById('f_firma').value = (data.firma||"");
     setFpStatus(data.firma ? 'Huella cargada ✔' : 'Sin huella capturada.');
     setReadOnly(true);
-    $btnEditToggle.hidden = false;
+    $btnEditToggle.hidden = true;
   }
 
   $modalBack.style.display = 'flex';
