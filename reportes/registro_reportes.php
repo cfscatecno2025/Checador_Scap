@@ -69,6 +69,14 @@ $NAVBAR = $ROOT . '/components/navbar.php';
 
 <div class="toast-container position-fixed top-0 end-0 p-3" id="toastArea"></div>
 
+<div class="container my-3">
+  <a href="/Checador_Scap/vistas-roles/vista-admin.php"
+     class="btn btn-primary"
+     style="border-radius:10px">
+    ← Regresar
+  </a>
+</div>
+
 <div class="container my-4">
 
   <!-- Filtros / Generación -->

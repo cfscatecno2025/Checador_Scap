@@ -150,6 +150,15 @@ $DEFAULT_AVATAR = dirname($_SERVER['SCRIPT_NAME'], 2) . '/assets/profiles-img/pe
 
 <div class="toast-container position-fixed top-0 end-0 p-3" id="toastArea" style="z-index:1086"></div>
 
+<div class="container my-3">
+  <a href="/Checador_Scap/vistas-roles/vista-admin.php"
+     class="btn btn-primary"
+     style="border-radius:10px">
+    ← Regresar
+  </a>
+</div>
+
+
 <div class="container my-4">
     <div class="card card-soft-p-3 mb-3">
   <h1>Gestión de empleados</h1>

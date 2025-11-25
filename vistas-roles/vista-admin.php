@@ -17,14 +17,77 @@ require_once $REQ_ROLE;
 require_role(['admin']);
 require_once $DB_FILE;
 
-// === Conteos ===
+// === Datos de bienvenida ===
+$welcomeName   = $_SESSION['usuario'] ?? 'admin'; // fallback
+$welcomeLink   = $_SESSION['usuario'] ?? '';      // clave de acceso como respaldo
 $totalEmpleados = null;
+
+// Métricas del día
+$asistenciasHoy = null;  // distinct empleados con ENTRADA hoy
+$retardosHoy    = null;  // distinct empleados con ENTRADA hoy y retardo>0
+$faltasHoy      = null;  // empleados programados hoy sin ENTRADA y sin justificante
 
 try {
   $pdo = DB::conn();
+
+  // 1) Bienvenida: intentar resolver nombre completo y enlace (codigo_empleado) desde empleados
+  $empId = (int)($_SESSION['empleado'] ?? 0);
+  if ($empId > 0) {
+    $st = $pdo->prepare("SELECT nombre, apellido, COALESCE(codigo_empleado::text, id_empleado::text) AS enlace
+                           FROM empleados WHERE id_empleado = ?");
+    $st->execute([$empId]);
+    if ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+      $nom = trim(($row['nombre'] ?? '').' '.($row['apellido'] ?? ''));
+      if ($nom !== '') $welcomeName = $nom;
+      if (!empty($row['enlace'])) $welcomeLink = (string)$row['enlace'];
+    }
+  }
+
+  // 2) Total de empleados (como ya tenías)
   $totalEmpleados = (int)$pdo->query("SELECT COUNT(*) FROM empleados")->fetchColumn();
+
+  // 3) Asistencias hoy (entradas)
+  $asistenciasHoy = (int)$pdo->query("
+      SELECT COUNT(DISTINCT id_empleado)
+        FROM checadas
+       WHERE DATE(fecha_hora) = CURRENT_DATE
+         AND tipo = 'ENTRADA'
+  ")->fetchColumn();
+
+  // 4) Retardos hoy
+  $retardosHoy = (int)$pdo->query("
+      SELECT COUNT(DISTINCT id_empleado)
+        FROM checadas
+       WHERE DATE(fecha_hora) = CURRENT_DATE
+         AND tipo = 'ENTRADA'
+         AND COALESCE(retardo_minutos,0) > 0
+  ")->fetchColumn();
+
+  // 5) Faltas hoy (según horarios activos del día, sin ENTRADA y sin justificante)
+  $diaSem = (int)date('N'); // 1=lunes .. 7=domingo
+  $stF = $pdo->prepare("
+    SELECT COUNT(DISTINCT h.id_empleado) AS faltas
+      FROM horarios h
+     WHERE h.activo = TRUE
+       AND h.dia_semana = :d
+       AND NOT EXISTS (
+             SELECT 1 FROM checadas c
+              WHERE c.id_empleado = h.id_empleado
+                AND c.tipo = 'ENTRADA'
+                AND DATE(c.fecha_hora) = CURRENT_DATE
+           )
+       AND NOT EXISTS (
+             SELECT 1 FROM justificantes j
+              WHERE j.id_empleado = h.id_empleado
+                AND j.fecha_inicio <= CURRENT_DATE
+                AND j.fecha_fin    >= CURRENT_DATE
+           )
+  ");
+  $stF->execute([':d' => $diaSem]);
+  $faltasHoy = (int)$stF->fetchColumn();
+
 } catch (Throwable $e) {
-  // Silencioso: mantenemos $totalEmpleados = null para mostrar —
+  // silencioso: deja las métricas como null para mostrar "—"
 }
 ?>
 <!doctype html>
@@ -55,8 +118,8 @@ try {
 
       --shadow: 0 10px 24px rgba(15,23,42,.08);
       
-      --bg-image: url('/Checador_Scap/assets/img/logo_login_scap.jpg');
-      --bg-size: clamp(520px, 52vw, 720px);
+      --bg-image: url('/Checador_Scap/assets/img/logo_isstech.png');
+      --bg-size: clamp(420px, 52vw, 420px);
     }
 
     *{box-sizing:border-box}
@@ -136,8 +199,9 @@ if (file_exists($NAVBAR)) {
 <main class="container">
   <h1 class="page-title">Panel de Administración</h1>
   <p class="subtitle">
-    Bienvenido, <strong><?= htmlspecialchars($_SESSION['usuario'] ?? 'admin', ENT_QUOTES, 'UTF-8') ?></strong>.
-    <span class="tag">Admin</span>
+    Bienvenido: <strong><?= htmlspecialchars($welcomeName, ENT_QUOTES, 'UTF-8') ?></strong>
+    &nbsp; <span class="tag">Enlace <?= htmlspecialchars($welcomeLink, ENT_QUOTES, 'UTF-8') ?></span>
+    &nbsp; <span class="tag">Admin</span>
   </p>
 
   <!-- Accesos rápidos -->
@@ -183,7 +247,7 @@ if (file_exists($NAVBAR)) {
         <h4 class="card-title">Asistencias hoy</h4>
         <span class="tag">Últimas 24h</span>
       </div>
-      <p class="card-value">—</p>
+      <p class="card-value"><?= $asistenciasHoy === null ? '—' : number_format($asistenciasHoy) ?></p>
       <p class="subtitle" style="margin-top:4px">Entradas registradas</p>
     </article>
 
@@ -192,7 +256,11 @@ if (file_exists($NAVBAR)) {
         <h4 class="card-title">Incidencias</h4>
         <span class="tag">Monitoreo</span>
       </div>
-      <p class="card-value">—</p>
+      <p class="card-value">
+        <?= ($retardosHoy === null || $faltasHoy === null)
+            ? '—'
+            : (number_format($retardosHoy).' / '.number_format($faltasHoy)) ?>
+      </p>
       <p class="subtitle" style="margin-top:4px">Retardos / faltas</p>
     </article>
   </section>
