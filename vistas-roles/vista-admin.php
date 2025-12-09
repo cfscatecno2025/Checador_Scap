@@ -141,6 +141,9 @@ try {
         background-size: var(--bg-size) auto;  
         background-attachment: fixed;
         pointer-events:none;
+        opacity: 0.3;
+        filter: saturate(0.95) brightness(0.96) contrast(1.05);
+        pointer-events: none;
     }
 
     .container{max-width:1200px;margin:24px auto;padding:0 16px}

@@ -121,15 +121,53 @@ $csrf = $_SESSION['csrf'];
   </div>
 
   <!-- Modal de escaneo -->
-  <div class="sheet-back" id="scanBack" aria-hidden="true">
-    <div class="sheet position-relative">
-      <div class="x" id="scanClose" aria-label="Cerrar">×</div>
-      <div id="scanTitle" class="h3 fw-bold">ENTRADA</div>
-      <div class="h5 text-muted mb-2">Escanea tu huella</div>
-      <svg class="fp-ico" viewBox="0 0 24 24" fill="none"><path d="M7.5 8.5C8 7 9.7 6 12 6c3 0 4.5 2 4.5 4.5 0 1.8-.6 3.6-1.4 5.1" stroke="#3b82f6" stroke-width="1.5"/><path d="M9 12c0-1.7 1-3 3-3s3 1.3 3 3c0 2.7-1 5.5-2.8 7.5" stroke="#3b82f6" stroke-width="1.5"/><path d="M5.5 14c.7-3.5 3.2-6 6.5-6 3.9 0 6.5 3 6.5 7.5 0 2.3-.7 4.3-1.8 6" stroke="#3b82f6" stroke-width="1.5"/></svg>
-      <div id="scanMsg" class="err"></div>
-    </div>
+<div class="sheet-back" id="scanBack" aria-hidden="true">
+  <div class="sheet position-relative">
+    <div class="x" id="scanClose" aria-label="Cerrar">×</div>
+    <div id="scanTitle" class="h3 fw-bold">ENTRADA</div>
+    <div class="h5 text-muted mb-2">Escanea tu huella</div>
+
+    <!-- Huella dactilar SVG corregida -->
+    <svg class="fp-ico"
+         viewBox="0 0 24 24"
+         xmlns="http://www.w3.org/2000/svg"
+         fill="none">
+      <g stroke="#3b82f6"
+         stroke-width="1.6"
+         stroke-linecap="round"
+         stroke-linejoin="round">
+        <!-- arco exterior -->
+        <path d="M5 11
+                 C5.7 6.5 8.3 4 12 4
+                 C15.7 4 18.3 6.5 19 11
+                 C19.4 13.3 19.4 15.3 19.1 17" />
+        <!-- arco medio -->
+        <path d="M7 12
+                 C7.4 8.5 9.2 7 12 7
+                 C14.8 7 16.6 8.5 17 12
+                 C17.3 13.8 17.3 15.3 17.1 16.7" />
+        <!-- arco interior -->
+        <path d="M9 13
+                 C9.3 11.2 10.3 10.3 12 10.3
+                 C13.7 10.3 14.7 11.2 15 13
+                 C15.2 14.1 15.2 15.2 15.1 16.1" />
+        <!-- núcleo -->
+        <path d="M12 12.5
+                 C12.7 13.7 13.1 15 13.1 16.5
+                 C13.1 18 12.9 19.3 12.6 20.3" />
+        <!-- lateral izquierda -->
+        <path d="M9.5 15.5
+                 C9.8 17.2 9.9 18.6 9.8 20" />
+        <!-- lateral externa -->
+        <path d="M7.5 15
+                 C7.9 17.2 7.9 18.8 7.6 20.3" />
+      </g>
+    </svg>
+
+    <div id="scanMsg" class="err"></div>
   </div>
+</div>
+
 
   <!-- Tarjeta de resultado -->
   <div class="profile-back" id="profBack" aria-hidden="true">

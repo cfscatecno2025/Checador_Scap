@@ -54,6 +54,9 @@ $NAVBAR = $ROOT . '/components/navbar.php';
     background-size:var(--bg-size) auto;
     opacity:var(--bg-opacity);
     pointer-events:none;
+    opacity: 0.3;
+     filter: saturate(0.95) brightness(0.96) contrast(1.05);
+     pointer-events: none;
   }
     .container{max-width:1200px}
     .card-soft{border-radius:14px; box-shadow:0 2px 12px rgba(15,23,42,.06)}
